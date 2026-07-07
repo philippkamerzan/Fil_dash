@@ -4,6 +4,7 @@ const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const gameShell = document.querySelector(".game-shell");
 const overlay = document.querySelector("#overlay");
+const pauseOverlay = document.querySelector("#pauseOverlay");
 const overlayTitle = overlay.querySelector(".overlay-title");
 const startButton = document.querySelector("#startButton");
 const pauseToggle = document.querySelector("#pauseToggle");
@@ -432,6 +433,7 @@ function startGame() {
   state.finished = false;
   state.finishResult = null;
   pauseToggle.textContent = "Ⅱ";
+  updatePauseUi();
   overlay.classList.add("hidden");
   playLevelMusic({ restart: true });
   playTone(420, 0.08, "triangle", 0.05);
@@ -595,8 +597,18 @@ function syncLevelMusic() {
 
 function setPaused(paused) {
   state.paused = paused;
-  pauseToggle.textContent = state.paused ? "▶" : "Ⅱ";
+  updatePauseUi();
   syncLevelMusic();
+}
+
+function updatePauseUi() {
+  const visible = state.paused && state.running && !state.finished;
+  pauseToggle.textContent = state.paused ? "▶" : "Ⅱ";
+  pauseToggle.classList.toggle("active", state.paused);
+  pauseToggle.setAttribute("aria-label", state.paused ? "Продолжить" : "Пауза");
+  pauseToggle.setAttribute("aria-pressed", String(state.paused));
+  pauseOverlay?.classList.toggle("hidden", !visible);
+  pauseOverlay?.setAttribute("aria-hidden", String(!visible));
 }
 
 function setMuted(muted) {
