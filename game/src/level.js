@@ -164,7 +164,7 @@ addJump(518);
 addJump(742);
 addJump(1000);
 boosters.push(trigger(825, 1057, 66, 66, "blueBoost", { power: 760 }));
-speedZones.push(trigger(900, 1014, 92, 132, "fast", { speed: 338 }));
+speedZones.push(trigger(900, 1014, 92, 132, "fast", { speed: 356 }));
 addPlatform(930, 1120, 280);
 
 // Section 2: rhythmic spike groups and a down-dot drop cue.
@@ -186,7 +186,7 @@ addSpike(2670, 1086, 90, 34, "up");
 addSpike(2915, 1086, 54, 34, "up");
 addSpike(2270, 1086, 52, 34, "up");
 addJump(2825);
-speedZones.push(trigger(2860, 1016, 94, 130, "slow", { speed: 276 }));
+speedZones.push(trigger(2860, 1016, 94, 130, "slow", { speed: 300 }));
 
 // Section 4: yellow hold-flight between ceiling and floor spikes.
 addPlatform(3060, 1120, 180);
@@ -230,7 +230,7 @@ addJump(7630);
 addJump(7880);
 addJump(7990);
 addJump(6960);
-speedZones.push(trigger(7780, 824, 100, 132, "fast", { speed: 362 }));
+speedZones.push(trigger(7780, 824, 100, 132, "fast", { speed: 384 }));
 
 // Section 8 and 9: orange gravity portal and ceiling run.
 portals.push(trigger(8110, 806, 104, 160, "gravityFlip", {
@@ -286,7 +286,7 @@ movers.push({ x: 11760, y: 790, w: 52, h: 60, axis: "y", amp: 62, speed: 1.7, ph
 addPlatform(12200, 980, 360, 44);
 addPlatform(12240, 900, 980, 44);
 miniZones.push(trigger(12280, 760, 820, 300, "mini", { enabled: true }));
-speedZones.push(trigger(12320, 804, 100, 132, "fast", { speed: 390 }));
+speedZones.push(trigger(12320, 804, 100, 132, "fast", { speed: 412 }));
 addSpike(12470, 884, 26, 16, "up");
 addSpike(12680, 884, 24, 16, "up");
 addSpikeRun(12820, 900, [1, 1], 108, 28);
@@ -310,7 +310,6 @@ yellowZones.push(trigger(14020, 825, 390, 230, "yellowFlight", { targetY: 880, m
 trampolines.push(trigger(14460, 948, 78, 30, "trampoline", { vx: 382, vy: -510 }));
 addSpike(13405, 946, 90, 34, "up");
 addSpike(13580, 692, 160, 6, "down");
-addSpike(14572, 966, 56, 14, "up");
 movers.push({ x: 14370, y: 1100, w: 62, h: 62, axis: "y", amp: 44, speed: 1.9, phase: 2.1, kind: "movingHazard" });
 movers.push({ x: 13780, y: 846, w: 46, h: 52, axis: "x", amp: 76, speed: 1.7, phase: 1.3, kind: "movingHazard" });
 addJump(13310, 140);
