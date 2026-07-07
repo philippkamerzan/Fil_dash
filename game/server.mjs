@@ -8,7 +8,8 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 const dataDir = join(root, "data");
 const dataFile = join(dataDir, "leaderboard.json");
 const port = Number(process.env.PORT || 5178);
-const maxRecords = 100;
+const maxRecordsPerLevel = 100;
+const defaultLevelId = "level-1";
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
@@ -54,6 +55,9 @@ function cleanRecord(input) {
   if (!Number.isFinite(time) || time <= 0 || time > 600) return null;
   return {
     id: String(input.id || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`).slice(0, 64),
+    levelId: cleanLevelId(input.levelId),
+    levelNumber: Math.max(1, Math.min(999, Math.floor(Number(input.levelNumber) || 1))),
+    levelTitle: String(input.levelTitle || "FIL Dash 1").replace(/\s+/g, " ").trim().slice(0, 40) || "FIL Dash 1",
     playerId: String(input.playerId || "anonymous").slice(0, 80),
     name: String(input.name || "Игрок").replace(/\s+/g, " ").trim().slice(0, 24) || "Игрок",
     time: Math.round(time * 100) / 100,
@@ -62,6 +66,19 @@ function cleanRecord(input) {
     score: Math.max(1, Math.floor(Number(input.score) || 1)),
     createdAt: Math.floor(Number(input.createdAt) || Date.now()),
   };
+}
+
+function cleanLevelId(value) {
+  const raw = String(value || defaultLevelId).trim().toLowerCase();
+  return raw.replace(/[^a-z0-9_-]/g, "").slice(0, 40) || defaultLevelId;
+}
+
+function recordLevelId(record) {
+  return cleanLevelId(record.levelId || defaultLevelId);
+}
+
+function recordsForLevel(records, levelId) {
+  return records.filter((record) => recordLevelId(record) === levelId);
 }
 
 function sortRecords(records) {
@@ -75,12 +92,15 @@ function sortRecords(records) {
 }
 
 async function handleLeaderboard(req, res) {
+  const url = new URL(req.url || "/api/leaderboard", "http://127.0.0.1");
+  const requestedLevelId = cleanLevelId(url.searchParams.get("levelId"));
   if (req.method === "OPTIONS") {
     json(res, 204, {});
     return;
   }
   if (req.method === "GET") {
-    json(res, 200, { records: sortRecords(await readRecords()).slice(0, 20) });
+    const records = recordsForLevel(await readRecords(), requestedLevelId);
+    json(res, 200, { levelId: requestedLevelId, records: sortRecords(records).slice(0, 20) });
     return;
   }
   if (req.method !== "POST") {
@@ -101,10 +121,19 @@ async function handleLeaderboard(req, res) {
         return;
       }
       const existing = await readRecords();
-      const withoutOlderSamePlayer = existing.filter((item) => item.playerId !== record.playerId);
-      const records = sortRecords([record, ...withoutOlderSamePlayer]).slice(0, maxRecords);
+      const withoutOlderSamePlayer = existing.filter((item) =>
+        item.playerId !== record.playerId || recordLevelId(item) !== record.levelId
+      );
+      const updated = [record, ...withoutOlderSamePlayer];
+      const records = [
+        ...updated.filter((item) => recordLevelId(item) !== record.levelId),
+        ...sortRecords(recordsForLevel(updated, record.levelId)).slice(0, maxRecordsPerLevel),
+      ];
       await writeRecords(records);
-      json(res, 200, { records: records.slice(0, 20) });
+      json(res, 200, {
+        levelId: record.levelId,
+        records: sortRecords(recordsForLevel(records, record.levelId)).slice(0, 20),
+      });
     } catch {
       json(res, 400, { error: "bad json" });
     }

@@ -20,6 +20,13 @@ node .\server.mjs
 
 Open `http://127.0.0.1:5178/`. Scores are stored in `data\leaderboard.json`.
 
+Levels:
+
+- the current full route is registered as `level-1` / `FIL Dash 1`;
+- open a specific level with `?level=1` or `?level=level-1`;
+- add future levels as new modules and register them in `src\levels.js`;
+- local and shared leaderboard records are scoped by `levelId`, so new levels do not mix scores with Level 1.
+
 Telegram Web App:
 
 - host this folder on a public HTTPS URL;

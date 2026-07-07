@@ -399,7 +399,13 @@ function scaleLevelToGeometryDashLength() {
 scaleLevelToGeometryDashLength();
 
 export const level = {
+  id: "level-1",
+  number: 1,
+  slug: "fil-dash-1",
+  title: "FIL Dash 1",
+  shortTitle: "L1",
   music: LEVEL_MUSIC,
+  world: WORLD,
   targetDurationSeconds: GEOMETRY_DASH_TARGET_SECONDS,
   baseWidth: LEVEL_BASE_WIDTH,
   scale: LEVEL_SCALE,

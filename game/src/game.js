@@ -1,4 +1,4 @@
-import { LEVEL_SCALE, WORLD, level } from "./level.js?v=62";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=1";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -8,6 +8,7 @@ const overlayTitle = overlay.querySelector(".overlay-title");
 const startButton = document.querySelector("#startButton");
 const pauseToggle = document.querySelector("#pauseToggle");
 const soundToggle = document.querySelector("#soundToggle");
+const levelNameEl = document.querySelector("#levelName");
 const attemptsEl = document.querySelector("#attempts");
 const bestTimeEl = document.querySelector("#bestTime");
 const sectionEl = document.querySelector("#sectionName");
@@ -19,11 +20,16 @@ const localLeaderboardEl = document.querySelector("#localLeaderboard");
 const globalLeaderboardEl = document.querySelector("#globalLeaderboard");
 
 const searchParams = new URLSearchParams(window.location.search);
+const level = getLevelById(searchParams.get("level") || searchParams.get("levelId"));
+const WORLD = level.world;
+const LEVEL_SCALE = level.scale;
+const LEVEL_ID = level.id;
 const TEST_RUN = searchParams.has("testRun");
 const TEST_SECTION = searchParams.get("section") || "";
 const TEST_TIME_SCALE = Number(searchParams.get("timeScale")) || 1;
 const LEADERBOARD_API_URL = searchParams.get("leaderboardApi") || window.FIL_DASH_LEADERBOARD_API || "/api/leaderboard";
-const LOCAL_RECORDS_KEY = "filDash.records.v1";
+const LEGACY_LOCAL_RECORDS_KEY = "filDash.records.v1";
+const LOCAL_RECORDS_KEY = `filDash.records.${LEVEL_ID}.v1`;
 const PLAYER_ID_KEY = "filDash.playerId.v1";
 const MAX_LOCAL_RECORDS = 12;
 
@@ -137,11 +143,31 @@ function safeParseJson(value, fallback) {
 
 function getLocalRecords() {
   const records = safeParseJson(localStorage.getItem(LOCAL_RECORDS_KEY), []);
-  return Array.isArray(records) ? records : [];
+  if (Array.isArray(records) && records.length) {
+    return records.map(normalizeRecordLevel).filter(recordBelongsToActiveLevel);
+  }
+
+  if (LEVEL_ID !== DEFAULT_LEVEL_ID) return [];
+  const legacyRecords = safeParseJson(localStorage.getItem(LEGACY_LOCAL_RECORDS_KEY), []);
+  return Array.isArray(legacyRecords)
+    ? legacyRecords.map(normalizeRecordLevel).filter(recordBelongsToActiveLevel)
+    : [];
 }
 
 function saveLocalRecords(records) {
-  localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(records.slice(0, MAX_LOCAL_RECORDS)));
+  const scoped = records.map(normalizeRecordLevel).filter(recordBelongsToActiveLevel);
+  localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(scoped.slice(0, MAX_LOCAL_RECORDS)));
+}
+
+function normalizeRecordLevel(record) {
+  return {
+    ...record,
+    levelId: record.levelId || DEFAULT_LEVEL_ID,
+  };
+}
+
+function recordBelongsToActiveLevel(record) {
+  return (record.levelId || DEFAULT_LEVEL_ID) === LEVEL_ID;
 }
 
 function sortRecords(records) {
@@ -191,6 +217,9 @@ function playerName() {
 function currentRunRecord() {
   const record = {
     id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    levelId: LEVEL_ID,
+    levelNumber: level.number,
+    levelTitle: level.title,
     playerId: playerId(),
     name: playerName(),
     time: Math.round(state.time * 100) / 100,
@@ -250,7 +279,7 @@ function updateRecordsUi() {
 
 async function refreshGlobalLeaderboard() {
   try {
-    const response = await fetch(LEADERBOARD_API_URL, { cache: "no-store" });
+    const response = await fetch(levelLeaderboardUrl(), { cache: "no-store" });
     if (!response.ok) throw new Error(`leaderboard ${response.status}`);
     const data = await response.json();
     state.globalLeaderboard = sortRecords(Array.isArray(data.records) ? data.records : []);
@@ -264,7 +293,7 @@ async function refreshGlobalLeaderboard() {
 
 async function submitGlobalRecord(record) {
   try {
-    const response = await fetch(LEADERBOARD_API_URL, {
+    const response = await fetch(levelLeaderboardUrl(), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(record),
@@ -277,6 +306,12 @@ async function submitGlobalRecord(record) {
     state.globalLeaderboardReady = false;
   }
   updateRecordsUi();
+}
+
+function levelLeaderboardUrl() {
+  const url = new URL(LEADERBOARD_API_URL, window.location.href);
+  url.searchParams.set("levelId", LEVEL_ID);
+  return url.toString();
 }
 
 function resize() {
@@ -2106,7 +2141,7 @@ document.querySelectorAll("[data-control='jump']").forEach((button) => {
 
 startButton.addEventListener("click", () => {
   if (state.finished) {
-    overlayTitle.textContent = "FIL Dash";
+    overlayTitle.textContent = level.title || "FIL Dash";
     startButton.textContent = "Старт";
     restartFromCheckpoint(false);
   }
@@ -2202,6 +2237,10 @@ function debugSnapshot() {
       forcedLandscape: forcedLandscapeViewport(),
     },
     world: {
+      levelId: LEVEL_ID,
+      levelNumber: level.number,
+      levelTitle: level.title,
+      availableLevels: levels.length,
       width: WORLD.width,
       height: WORLD.height,
       targetDurationSeconds: level.targetDurationSeconds,
@@ -2246,6 +2285,9 @@ window.__FIL_DASH_DEBUG__ = debugSnapshot;
 
 resize();
 initTelegram();
+document.title = level.title || "FIL Dash";
+if (levelNameEl) levelNameEl.textContent = level.shortTitle || `L${level.number || 1}`;
+overlayTitle.textContent = level.title || "FIL Dash";
 updateRecordsUi();
 if (!TEST_RUN) refreshGlobalLeaderboard();
 if (TEST_RUN && sectionSpawns[TEST_SECTION]) {

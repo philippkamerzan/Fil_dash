@@ -63,6 +63,7 @@ body.force-landscape .game-shell {
 }
 
 .brand,
+.level-pill,
 .hud-stat,
 .section-pill,
 .icon-button {
@@ -83,6 +84,14 @@ body.force-landscape .game-shell {
   min-width: 92px;
   padding: 0 13px;
   font-weight: 900;
+}
+
+.level-pill {
+  min-width: 42px;
+  padding: 0 10px;
+  color: var(--sun);
+  font-size: 13px;
+  font-weight: 950;
 }
 
 .hud-stat {
@@ -338,6 +347,7 @@ body.force-landscape .game-shell {
   }
 
   .brand,
+  .level-pill,
   .hud-stat,
   .section-pill,
   .icon-button {
@@ -347,6 +357,11 @@ body.force-landscape .game-shell {
   .brand {
     min-width: 82px;
     padding: 0 10px;
+  }
+
+  .level-pill {
+    min-width: 38px;
+    padding: 0 8px;
   }
 
   .hud-stat {
@@ -432,6 +447,7 @@ body.force-landscape .hud {
 }
 
 body.force-landscape .brand,
+body.force-landscape .level-pill,
 body.force-landscape .hud-stat,
 body.force-landscape .section-pill,
 body.force-landscape .icon-button {
@@ -441,6 +457,11 @@ body.force-landscape .icon-button {
 body.force-landscape .brand {
   min-width: 82px;
   padding: 0 10px;
+}
+
+body.force-landscape .level-pill {
+  min-width: 38px;
+  padding: 0 8px;
 }
 
 body.force-landscape .hud-stat {
