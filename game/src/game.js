@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=1";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=2";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -55,6 +55,7 @@ const colors = {
 
 const MOUTH_CLOSE_SECONDS = 0.24;
 const MOUTH_TOOTH_H = 26;
+const MOUTH_TOOTH_HIT_H = 6;
 const MOUTH_SEAM_OVERLAP = 2;
 
 const finishPortal = level.portals.find((portal) => portal.type === "finish");
@@ -971,8 +972,8 @@ function mouthRects(m) {
 function mouthHazardRects(m) {
   const { top, bottom } = mouthRects(m);
   return {
-    top: { x: top.x, y: top.y, w: top.w, h: top.h + MOUTH_TOOTH_H },
-    bottom: { x: bottom.x, y: bottom.y - MOUTH_TOOTH_H, w: bottom.w, h: bottom.h + MOUTH_TOOTH_H },
+    top: { x: top.x, y: top.y, w: top.w, h: top.h + MOUTH_TOOTH_HIT_H },
+    bottom: { x: bottom.x, y: bottom.y - MOUTH_TOOTH_HIT_H, w: bottom.w, h: bottom.h + MOUTH_TOOTH_HIT_H },
   };
 }
 
@@ -2194,8 +2195,8 @@ function seesMoverAhead() {
 function planeTargetY(x) {
   if (x < scaleLevelX(5520)) return 1060;
   if (x < scaleLevelX(5900)) return 1050;
-  if (x < scaleLevelX(6130)) return 1010;
-  if (x < scaleLevelX(6500)) return 1110;
+  if (x < scaleLevelX(6040)) return 1010;
+  if (x < scaleLevelX(6500)) return 1120;
   return 1070;
 }
 
