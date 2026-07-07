@@ -412,10 +412,25 @@ function cameraTarget() {
     : ceilingRun
       ? 36
       : 118;
+  const lowerRunSurfaceY = cameraLowerRunSurfaceY(compact, lowViewport, ceilingRun);
+  const targetY = lowerRunSurfaceY == null
+    ? player.y - viewH * focus + verticalLead
+    : lowerRunSurfaceY;
   return {
     x: Math.max(0, Math.min(WORLD.width - viewW, player.x - desiredScreenX)),
-    y: Math.max(0, Math.min(WORLD.height - viewH, player.y - viewH * focus + verticalLead)),
+    y: Math.max(0, Math.min(WORLD.height - viewH, targetY)),
   };
+}
+
+function cameraLowerRunSurfaceY(compact, lowViewport, ceilingRun) {
+  if (player.mode !== "cube" || player.yellowActive || ceilingRun) return null;
+  const sectionLane = state.currentSection?.lane;
+  if (!Number.isFinite(sectionLane) || sectionLane < 760) return null;
+  const surfaceY = Math.max(sectionLane, player.y + player.h);
+  const laneScreenRatio = compact
+    ? (lowViewport ? 0.82 : 0.76)
+    : 0.72;
+  return surfaceY - viewH * laneScreenRatio;
 }
 
 function snapCameraToPlayer() {
