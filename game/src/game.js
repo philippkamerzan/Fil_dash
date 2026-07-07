@@ -53,6 +53,10 @@ const colors = {
   paper: "#fbf3e4",
 };
 
+const MOUTH_CLOSE_SECONDS = 0.24;
+const MOUTH_TOOTH_H = 26;
+const MOUTH_SEAM_OVERLAP = 2;
+
 const finishPortal = level.portals.find((portal) => portal.type === "finish");
 const playableEndX = finishPortal?.x ?? WORLD.width;
 
@@ -789,7 +793,7 @@ function updatePlane(dt) {
   for (const mouth of level.mouths) {
     if (!mouth.passed && player.x > mouth.x + 58) {
       mouth.passed = true;
-      mouth.closeTimer = 0.24;
+      mouth.closeTimer = MOUTH_CLOSE_SECONDS;
     }
     if (mouth.passed) {
       mouth.closeTimer -= dt;
@@ -799,8 +803,7 @@ function updatePlane(dt) {
         playTone(150, 0.08, "square", 0.05);
       }
     }
-    const topHazard = { x: mouth.x, y: mouth.top, w: 74, h: mouth.gapY - mouth.top };
-    const bottomHazard = { x: mouth.x, y: mouth.gapY + mouth.gapH, w: 74, h: mouth.bottom - (mouth.gapY + mouth.gapH) };
+    const { top: topHazard, bottom: bottomHazard } = mouthHazardRects(mouth);
     if (rectsOverlap(playerHazardRect(), topHazard) || rectsOverlap(playerHazardRect(), bottomHazard)) kill("mouth");
   }
 }
@@ -936,6 +939,40 @@ function movingRect(m) {
     w: m.w,
     h: m.h,
     kind: m.kind,
+  };
+}
+
+function mouthCloseProgress(m) {
+  if (m.closed) return 1;
+  if (!m.passed) return 0;
+  return clamp01(1 - Math.max(0, m.closeTimer) / MOUTH_CLOSE_SECONDS);
+}
+
+function mouthRects(m) {
+  const progress = mouthCloseProgress(m);
+  const maxClose = m.gapH / 2;
+  const breathe = Math.sin(state.time * 6 + m.x) * 5 * (1 - progress);
+  let topBottom = m.gapY + maxClose * progress + breathe;
+  let bottomTop = m.gapY + m.gapH - maxClose * progress - breathe;
+
+  if (progress >= 1) {
+    const center = m.gapY + maxClose;
+    topBottom = center + MOUTH_SEAM_OVERLAP;
+    bottomTop = center - MOUTH_SEAM_OVERLAP;
+  }
+
+  return {
+    progress,
+    top: { x: m.x, y: m.top, w: 74, h: Math.max(1, topBottom - m.top) },
+    bottom: { x: m.x, y: bottomTop, w: 74, h: Math.max(1, m.bottom - bottomTop) },
+  };
+}
+
+function mouthHazardRects(m) {
+  const { top, bottom } = mouthRects(m);
+  return {
+    top: { x: top.x, y: top.y, w: top.w, h: top.h + MOUTH_TOOTH_H },
+    bottom: { x: bottom.x, y: bottom.y - MOUTH_TOOTH_H, w: bottom.w, h: bottom.h + MOUTH_TOOTH_H },
   };
 }
 
@@ -1903,24 +1940,28 @@ function drawPortal(p, c1, c2) {
 function drawMouths() {
   for (const m of level.mouths) {
     if (!isVisible({ x: m.x, y: m.top, w: 90, h: m.bottom - m.top })) continue;
-    const close = m.closed ? 52 : m.passed ? Math.max(0, 44 * (1 - m.closeTimer / 0.24)) : 0;
-    const breathe = Math.sin(state.time * 6 + m.x) * 5;
-    const topH = m.gapY - m.top + close + breathe;
-    const bottomY = m.gapY + m.gapH - close - breathe;
-    drawMouthBlock(m.x, m.top, 74, topH, "down");
-    drawMouthBlock(m.x, bottomY, 74, m.bottom - bottomY, "up");
+    const { top, bottom, progress } = mouthRects(m);
+    drawMouthBlock(top.x, top.y, top.w, top.h, "down", progress);
+    drawMouthBlock(bottom.x, bottom.y, bottom.w, bottom.h, "up", progress);
   }
 }
 
-function drawMouthBlock(x, y, w, h, dir) {
-  ctx.fillStyle = "#28b6b8";
+function drawMouthBlock(x, y, w, h, dir, progress = 0) {
+  ctx.fillStyle = colors.green;
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 6;
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, 7);
   ctx.fill();
   ctx.stroke();
-  const teeth = { x, y: dir === "down" ? y + h - 20 : y, w, h: 22, dir };
+  const bitePulse = 1 + progress * 0.18;
+  const teeth = {
+    x: x - 2,
+    y: dir === "down" ? y + h - 1 : y - MOUTH_TOOTH_H + 1,
+    w: w + 4,
+    h: MOUTH_TOOTH_H * bitePulse,
+    dir,
+  };
   drawSpikeStrip(teeth);
   ctx.fillStyle = colors.orange;
   ctx.beginPath();
