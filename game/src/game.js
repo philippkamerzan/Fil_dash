@@ -381,7 +381,7 @@ function startGame() {
 }
 
 function restartFromCheckpoint(countAttempt = true) {
-  const spawn = structuredClone(state.checkpoint);
+  const spawn = structuredClone(TEST_RUN && TEST_SECTION ? state.checkpoint : WORLD.start);
   player.x = spawn.x;
   player.y = spawn.y;
   player.vx = spawn.mode === "plane" ? 365 : 320;
@@ -617,7 +617,6 @@ function update(dt) {
     return;
   }
 
-  updateCheckpoint();
   if (player.mode === "plane") updatePlane(dt);
   else updateCube(dt);
   updateCommonInteractions(dt);
@@ -633,14 +632,6 @@ function updateParticles(dt) {
     p.vy += 420 * dt;
   }
   state.particles = state.particles.filter((p) => p.life > 0);
-}
-
-function updateCheckpoint() {
-  for (const cp of level.checkpoints) {
-    if (player.x >= cp.x && cp.x >= (state.checkpoint.xKey ?? -1)) {
-      state.checkpoint = { ...structuredClone(cp.spawn), xKey: cp.x };
-    }
-  }
 }
 
 function targetSpeed() {
@@ -898,7 +889,6 @@ function portalTargetSnapshot(portal) {
     gravity: portal.target.gravity,
     vx: portal.target.mode === "plane" ? 318 : 300,
     vy: 0,
-    checkpointX: portal.checkpointX,
   };
 }
 
@@ -1017,9 +1007,6 @@ function applyPortalTarget(transition) {
   player.onGround = false;
   player.jumpLatch = false;
   player.yellowActive = false;
-  if (target.checkpointX != null) {
-    state.checkpoint = { x: target.x, y: target.y, mode: target.mode, gravity: target.gravity, xKey: target.checkpointX };
-  }
 }
 
 function updateMiniMode() {

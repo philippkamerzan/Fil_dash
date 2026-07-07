@@ -38,7 +38,6 @@ const gravityRings = [];
 const miniZones = [];
 const routeBands = [];
 const decorations = [];
-const checkpoints = [];
 const testActions = [];
 
 export const sections = [
@@ -200,7 +199,6 @@ addPlatform(4380, 1120, 370);
 trampolines.push(trigger(4460, 1088, 88, 30, "trampoline", { vx: 380, vy: -640 }));
 boosters.push(trigger(4670, 790, 120, 420, "portalDown", {
   target: { x: 5120, y: 1060, mode: "plane", gravity: 1 },
-  checkpointX: 5050,
 }));
 
 // Section 6: plane corridor after the portal down.
@@ -215,7 +213,6 @@ movers.push({ x: 6035, y: 1138, w: 48, h: 56, axis: "y", amp: 72, speed: 1.55, p
 movers.push({ x: 6360, y: 935, w: 42, h: 54, axis: "y", amp: 58, speed: 1.9, phase: 0.55, kind: "movingHazard" });
 portals.push(trigger(6715, 982, 104, 170, "planeOut", {
   target: { x: 6900, y: 896, mode: "cube", gravity: 1 },
-  checkpointX: 6850,
 }));
 
 // Section 7: cube return with short rhythmic patterns and jump rings.
@@ -238,7 +235,6 @@ speedZones.push(trigger(7780, 824, 100, 132, "fast", { speed: 405 }));
 // Section 8 and 9: orange gravity portal and ceiling run.
 portals.push(trigger(8110, 806, 104, 160, "gravityFlip", {
   target: { x: 8270, y: 542, mode: "cube", gravity: -1 },
-  checkpointX: 8120,
 }));
 addPlatform(8240, 500, 470, 42);
 addPlatform(8720, 500, 460, 42);
@@ -257,7 +253,6 @@ addHold(9500, 260);
 addHold(9780, 240);
 portals.push(trigger(10030, 420, 108, 168, "gravityRestore", {
   target: { x: 10220, y: 866, mode: "cube", gravity: 1 },
-  checkpointX: 10190,
 }));
 
 // Section 10: safe platform after gravity restore.
@@ -332,14 +327,6 @@ addJump(14640);
 addJump(14900);
 portals.push(trigger(15100, 896, 120, 190, "finish"));
 
-checkpoints.push(
-  { x: 0, spawn: { x: 72, y: 1086, mode: "cube", gravity: 1 } },
-  { x: 5050, spawn: { x: 5120, y: 1060, mode: "plane", gravity: 1 } },
-  { x: 6850, spawn: { x: 6900, y: 896, mode: "cube", gravity: 1 } },
-  { x: 10190, spawn: { x: 10220, y: 866, mode: "cube", gravity: 1 } },
-  { x: 12200, spawn: { x: 12240, y: 866, mode: "cube", gravity: 1 } },
-);
-
 function scaleCoord(value) {
   return Math.round(value * LEVEL_SCALE);
 }
@@ -355,7 +342,6 @@ function scaleRectX(item, scaleWidth = false) {
 
 function scalePortalTarget(item) {
   if (item.target?.x != null) item.target.x = scaleCoord(item.target.x);
-  if (item.checkpointX != null) item.checkpointX = scaleCoord(item.checkpointX);
 }
 
 function scaleRouteBand(item) {
@@ -408,10 +394,6 @@ function scaleLevelToGeometryDashLength() {
 
   [...boosters, ...portals].forEach(scalePortalTarget);
 
-  checkpoints.forEach((checkpoint) => {
-    checkpoint.x = scaleCoord(checkpoint.x);
-    if (checkpoint.x > 0) checkpoint.spawn.x = scaleCoord(checkpoint.spawn.x);
-  });
 }
 
 scaleLevelToGeometryDashLength();
@@ -439,6 +421,5 @@ export const level = {
   miniZones,
   routeBands,
   decorations,
-  checkpoints,
   testActions,
 };
