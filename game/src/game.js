@@ -384,7 +384,7 @@ function restartFromCheckpoint(countAttempt = true) {
   const spawn = structuredClone(state.checkpoint);
   player.x = spawn.x;
   player.y = spawn.y;
-  player.vx = spawn.mode === "plane" ? 348 : 304;
+  player.vx = spawn.mode === "plane" ? 365 : 320;
   player.vy = 0;
   player.mode = spawn.mode;
   player.gravity = spawn.gravity;
@@ -645,10 +645,10 @@ function updateCheckpoint() {
 
 function targetSpeed() {
   const section = activeSection();
-  let speed = player.mini ? 378 : 340;
-  if (section.id === "spikes" || section.id === "cube-return") speed = 356;
-  if (section.id === "mini") speed = 384;
-  if (section.id === "mix") speed = 374;
+  let speed = player.mini ? 398 : 358;
+  if (section.id === "spikes" || section.id === "cube-return") speed = 374;
+  if (section.id === "mini") speed = 404;
+  if (section.id === "mix") speed = 394;
   for (const zone of level.speedZones) {
     if (rectsOverlap(playerRect(), zone)) speed = zone.speed;
   }
@@ -672,9 +672,9 @@ function updateCube(dt) {
     }
   }
 
-  const target = player.yellowActive ? 424 : targetSpeed();
+  const target = player.yellowActive ? 448 : targetSpeed();
   player.vx += (target - player.vx) * Math.min(1, dt * 7.2);
-  player.vx = Math.max(258, Math.min(player.yellowActive ? 452 : 430, player.vx));
+  player.vx = Math.max(270, Math.min(player.yellowActive ? 480 : 454, player.vx));
 
   if (keys.jump && player.onGround && !player.jumpLatch) {
     const jumpPower = player.mini ? 555 : 625;
@@ -702,7 +702,7 @@ function updateCube(dt) {
 }
 
 function updatePlane(dt) {
-  player.vx += (354 - player.vx) * Math.min(1, dt * 7);
+  player.vx += (372 - player.vx) * Math.min(1, dt * 7);
   player.vy += (keys.jump ? -1030 : 820) * dt;
   player.vy *= 0.988;
   player.vy = Math.max(-390, Math.min(390, player.vy));
@@ -1150,7 +1150,30 @@ function drawBackground() {
       ctx.stroke();
     }
   }
+  drawSpeedStreaks(section);
   ctx.globalAlpha = 1;
+}
+
+function drawSpeedStreaks(section) {
+  if (!state.running || state.paused || state.finished) return;
+  const intensity = Math.max(0, Math.min(1, (Math.abs(player.vx) - 318) / 142));
+  if (intensity <= 0.04) return;
+
+  ctx.save();
+  ctx.globalAlpha = 0.05 + intensity * 0.1;
+  ctx.strokeStyle = mixHex(section.accent, "#ffffff", 0.16);
+  ctx.lineWidth = 2.4 + intensity * 2.2;
+  ctx.lineCap = "round";
+  for (let i = 0; i < 30; i++) {
+    const x = (viewW - ((camera.x * 0.62 + state.time * 240 + i * 117) % (viewW + 240))) + 90;
+    const y = ((camera.y * 0.05 + i * 49 + Math.sin(state.time * 2 + i) * 18) % (viewH + 110)) - 55;
+    const len = 62 + intensity * 96 + (i % 3) * 18;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - len, y + 7 + intensity * 7);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawWorld() {
