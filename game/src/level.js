@@ -65,6 +65,20 @@ function addSpike(x, topY, w, h = 34, dir = "up", extra = {}) {
   hazards.push(spike(x, topY, w, h, dir, extra));
 }
 
+function addPopupSpike(x, topY, w, h = 34, dir = "up", extra = {}) {
+  const { popup = {}, ...rest } = extra;
+  addSpike(x, topY, w, h, dir, {
+    ...rest,
+    popup: {
+      triggerDistance: 300,
+      extendDistance: 150,
+      hiddenOffset: h,
+      warningColor: "#ff9e23",
+      ...popup,
+    },
+  });
+}
+
 function addSpikeRun(startX, baseY, groups, gap = 58, spikeW = 34) {
   let x = startX;
   for (const count of groups) {
@@ -173,6 +187,7 @@ addPlatform(930, 1120, 280);
 // Section 2: rhythmic spike groups and a down-dot drop cue.
 addPlatform(1190, 1120, 1050);
 addSpikeRun(1240, 1120, [1, 2, 1, 2], 190);
+addPopupSpike(1900, 1086, 32, 34, "up", { popup: { triggerDistance: 340, extendDistance: 145 } });
 addSpike(2185, 1086, 38, 34, "up");
 addJump(1180);
 addJump(1398);
@@ -209,7 +224,7 @@ addSpike(5100, 830, 1600, 38, "down", { scaleWidth: true });
 addSpike(5100, 1282, 1600, 38, "up", { scaleWidth: true });
 mouths.push(
   { x: 5570, top: 870, bottom: 1268, gapY: 962, gapH: 145, closed: false, passed: false },
-  { x: 6230, top: 850, bottom: 1268, gapY: 1010, gapH: 205, closed: false, passed: false },
+  { x: 6230, top: 850, bottom: 1268, gapY: 990, gapH: 220, closed: false, passed: false },
   { x: 6480, top: 850, bottom: 1268, gapY: 1012, gapH: 195, closed: false, passed: false },
 );
 movers.push({ x: 6035, y: 1138, w: 48, h: 56, axis: "y", amp: 72, speed: 1.55, phase: 1.1, kind: "movingHazard" });
@@ -223,6 +238,7 @@ portals.push(trigger(6715, 982, 104, 170, "planeOut", {
 addPlatform(6880, 930, 1210, 44);
 addSpike(7040, 896, 36, 34, "up");
 addSpikeRun(7240, 930, [1, 1, 2, 1], 178, 32);
+addPopupSpike(7835, 896, 30, 34, "up", { popup: { triggerDistance: 330, extendDistance: 130 } });
 orbs.push(
   trigger(7270, 790, 46, 46, "jumpOrb", { power: 620, color: "#34d399" }),
   trigger(7640, 775, 46, 46, "jumpOrb", { power: 660, color: "#ffd84d" }),
@@ -231,6 +247,7 @@ addJump(7220);
 addJump(7250, 220);
 addJump(7340, 260);
 addJump(7630);
+addJump(7788, 120);
 addJump(7880);
 addJump(7990);
 addJump(6960);
@@ -276,6 +293,7 @@ addPlatform(10960, 1120, 1300, 44);
 autoPads.push(trigger(11600, 1084, 82, 32, "autoPad", { power: 650, vx: 330 }));
 autoPads.push(trigger(12110, 1084, 82, 32, "autoPad", { power: 720, vx: 338 }));
 addSpike(10870, 866, 34, 34, "up");
+addPopupSpike(11085, 866, 34, 34, "up", { popup: { triggerDistance: 300, extendDistance: 130 } });
 addSpike(11320, 1086, 42, 34, "up");
 addSpike(11695, 1086, 34, 34, "up");
 addSpike(11900, 866, 170, 34, "up");
@@ -333,6 +351,7 @@ addJump(14420, 150);
 // Section 14: finish portal with a final safe runway.
 addPlatform(14600, 1040, 720, 44);
 addSpike(14735, 1006, 38, 34, "up");
+addPopupSpike(14835, 1006, 32, 34, "up", { popup: { triggerDistance: 300, extendDistance: 120 } });
 addSpike(14965, 1006, 42, 34, "up");
 addSpike(15045, 1006, 32, 34, "up");
 addJump(14640);

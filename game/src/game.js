@@ -342,13 +342,35 @@ function playerHazardRect() {
 }
 
 function spikeHitRect(h) {
+  const pop = spikePopProgress(h);
+  if (h.popup && pop < 0.48) return { x: h.x, y: h.y, w: 0, h: 0 };
+  const spikeRect = animatedSpikeRect(h);
   const insetX = Math.min(12, h.w * 0.18);
-  const activeH = h.h * 0.68;
+  const activeH = h.h * 0.68 * (h.popup ? Math.max(0.28, pop) : 1);
   return {
-    x: h.x + insetX,
-    y: h.dir === "down" ? h.y : h.y + h.h - activeH,
+    x: spikeRect.x + insetX,
+    y: spikeRect.dir === "down" ? spikeRect.y : spikeRect.y + spikeRect.h - activeH,
     w: Math.max(4, h.w - insetX * 2),
     h: activeH,
+  };
+}
+
+function spikePopProgress(h) {
+  if (!h.popup) return 1;
+  const triggerDistance = h.popup.triggerDistance ?? 280;
+  const extendDistance = h.popup.extendDistance ?? 150;
+  const leadX = h.x - triggerDistance;
+  return clamp01((player.x + player.w - leadX) / extendDistance);
+}
+
+function animatedSpikeRect(h) {
+  if (!h.popup) return h;
+  const pop = spikePopProgress(h);
+  const hiddenOffset = h.popup.hiddenOffset ?? h.h;
+  const shift = hiddenOffset * (1 - pop);
+  return {
+    ...h,
+    y: h.dir === "down" ? h.y - shift : h.y + shift,
   };
 }
 
@@ -1574,25 +1596,45 @@ function drawHazards() {
 }
 
 function drawSpikeStrip(h) {
-  const count = Math.max(1, Math.floor(h.w / 24));
-  const step = h.w / count;
+  const spikeRect = animatedSpikeRect(h);
+  const pop = spikePopProgress(h);
+  const count = Math.max(1, Math.floor(spikeRect.w / 24));
+  const step = spikeRect.w / count;
   ctx.save();
+  if (h.popup) drawPopupSpikeWarning(h, pop);
   ctx.fillStyle = colors.ink;
   ctx.strokeStyle = colors.ink;
+  ctx.globalAlpha = h.popup ? 0.46 + pop * 0.54 : 1;
   ctx.beginPath();
   for (let i = 0; i < count; i++) {
-    const x = h.x + i * step;
-    if (h.dir === "down") {
-      ctx.moveTo(x, h.y);
-      ctx.lineTo(x + step / 2, h.y + h.h);
-      ctx.lineTo(x + step, h.y);
+    const x = spikeRect.x + i * step;
+    if (spikeRect.dir === "down") {
+      ctx.moveTo(x, spikeRect.y);
+      ctx.lineTo(x + step / 2, spikeRect.y + spikeRect.h);
+      ctx.lineTo(x + step, spikeRect.y);
     } else {
-      ctx.moveTo(x, h.y + h.h);
-      ctx.lineTo(x + step / 2, h.y);
-      ctx.lineTo(x + step, h.y + h.h);
+      ctx.moveTo(x, spikeRect.y + spikeRect.h);
+      ctx.lineTo(x + step / 2, spikeRect.y);
+      ctx.lineTo(x + step, spikeRect.y + spikeRect.h);
     }
   }
   ctx.fill();
+  ctx.restore();
+}
+
+function drawPopupSpikeWarning(h, pop) {
+  const surfaceY = h.dir === "down" ? h.y : h.y + h.h;
+  const flash = 0.55 + Math.sin(state.time * 15 + h.x * 0.01) * 0.45;
+  ctx.save();
+  ctx.globalAlpha = 0.25 + flash * 0.2 + pop * 0.2;
+  ctx.fillStyle = h.popup.warningColor || colors.orange;
+  ctx.shadowColor = ctx.fillStyle;
+  ctx.shadowBlur = 8 + pop * 10;
+  if (h.dir === "down") {
+    ctx.fillRect(h.x + 4, surfaceY - 4, Math.max(4, h.w - 8), 6);
+  } else {
+    ctx.fillRect(h.x + 4, surfaceY - 2, Math.max(4, h.w - 8), 6);
+  }
   ctx.restore();
 }
 
