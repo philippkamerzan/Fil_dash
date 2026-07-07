@@ -90,6 +90,27 @@ function addRouteBand(x, y, w, h, kind, color, extra = {}) {
   routeBands.push({ x, y, w, h, kind, color, ...extra });
 }
 
+function fillLowerLayer(section, startOffset = 70, endPad = 70) {
+  const end = section.x + section.w - endPad;
+  for (let x = section.x + startOffset, i = 0; x < end; x += 145, i++) {
+    addDecor(x, section.lane + 215 + (i % 3) * 82, i % 2 === 0 ? "chevron" : "arrow", section.accent, {
+      dir: "right",
+      phase: i * 0.38,
+      scale: 1.05 + (i % 2) * 0.18,
+    });
+    addDecor(x + 58, section.lane + 332 + (i % 2) * 92, i % 3 === 0 ? "miniBlock" : "rail", section.accent, {
+      phase: i * 0.52,
+      scale: 0.86,
+    });
+    if (i % 2 === 0) {
+      addDecor(x + 104, section.lane + 462, "arc", section.accent, {
+        phase: i * 0.7,
+        scale: 0.95,
+      });
+    }
+  }
+}
+
 function fillDecor(section, density = 86) {
   const end = section.x + section.w;
   for (let x = section.x + 60; x < end; x += density) {
@@ -118,7 +139,12 @@ function fillDecor(section, density = 86) {
 }
 
 sections.forEach((section) => fillDecor(section));
+sections.slice(0, 4).forEach((section) => fillLowerLayer(section));
 
+addRouteBand(80, 1305, 820, 88, "horizontal", "#2d68ff", { label: "start-lower-pack" });
+addRouteBand(1020, 1330, 1180, 78, "diagonal", "#22c7d7", { dy: -145, label: "spike-lower-sweep" });
+addRouteBand(2260, 1285, 128, 350, "vertical", "#ff4d6d", { dir: "down", scaleWidth: false, label: "trap-lower-drop" });
+addRouteBand(2520, 1325, 660, 82, "horizontal", "#ff4d6d", { label: "trap-lower-pack" });
 addRouteBand(5120, 1050, 1500, 100, "horizontal", "#20c5d6", { label: "plane-tunnel" });
 addRouteBand(10280, 520, 126, 540, "vertical", "#8b5cf6", { dir: "up", scaleWidth: false, label: "vertical-lift" });
 addRouteBand(10920, 760, 150, 420, "vertical", "#9b7cff", { dir: "down", scaleWidth: false, label: "ghost-drop" });

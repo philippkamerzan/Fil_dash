@@ -347,13 +347,13 @@ function cameraTarget() {
   const focus = ceilingRun
     ? (compact ? 0.63 : 0.58)
     : compact
-      ? (lowViewport ? 0.54 : 0.44)
-      : 0.52;
+      ? (lowViewport ? 0.62 : 0.5)
+      : 0.54;
   const verticalLead = compact
-    ? (player.mode === "plane" ? (lowViewport ? 38 : 50) : ceilingRun ? 22 : 84)
+    ? (player.mode === "plane" ? (lowViewport ? 38 : 50) : ceilingRun ? 22 : lowViewport ? 50 : 66)
     : ceilingRun
       ? 36
-      : 140;
+      : 118;
   return {
     x: Math.max(0, Math.min(WORLD.width - viewW, player.x - desiredScreenX)),
     y: Math.max(0, Math.min(WORLD.height - viewH, player.y - viewH * focus + verticalLead)),
