@@ -438,7 +438,7 @@ function startGame() {
 }
 
 function restartFromCheckpoint(countAttempt = true) {
-  const spawn = structuredClone(TEST_RUN && TEST_SECTION ? state.checkpoint : WORLD.start);
+  const spawn = structuredClone(!countAttempt && TEST_RUN && TEST_SECTION ? state.checkpoint : WORLD.start);
   player.x = spawn.x;
   player.y = spawn.y;
   player.vx = spawn.mode === "plane" ? 390 : 340;
