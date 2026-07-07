@@ -54,6 +54,7 @@ const sectionSpawns = {
   plane: { x: scaleLevelX(5120), y: 1060, mode: "plane", gravity: 1 },
   gravity: { x: scaleLevelX(8270), y: 540, mode: "cube", gravity: -1 },
   ghost: { x: scaleLevelX(10670), y: 866, mode: "cube", gravity: 1 },
+  mini: { x: scaleLevelX(12240), y: 866, mode: "cube", gravity: 1 },
   finish: { x: scaleLevelX(13220), y: 946, mode: "cube", gravity: 1 },
 };
 
@@ -1156,6 +1157,7 @@ function drawWorld() {
   ctx.translate(-camera.x, -camera.y);
   drawSectionBands();
   drawDecorations();
+  drawRouteBands();
   drawSpeedZones();
   drawPlatforms();
   drawHazards();
@@ -1207,6 +1209,178 @@ function drawSectionBands() {
     ctx.stroke();
     ctx.restore();
   }
+}
+
+function drawRouteBands() {
+  for (const band of level.routeBands || []) {
+    const visibility = band.kind === "vertical"
+      ? { x: band.x, w: band.w }
+      : { x: band.x, w: band.w + Math.abs(band.dy || 0) };
+    if (!isVisible(visibility, 260)) continue;
+    drawRouteBand(band);
+  }
+}
+
+function drawRouteBand(band) {
+  if (band.kind === "tunnel3d") {
+    drawRouteTunnel3d(band);
+    return;
+  }
+
+  const thick = band.kind === "vertical" ? band.w : band.h;
+  let length = band.w;
+  let angle = 0;
+  let originX = band.x;
+  let originY = band.y + band.h / 2;
+
+  if (band.kind === "vertical") {
+    length = band.h;
+    angle = band.dir === "up" ? -Math.PI / 2 : Math.PI / 2;
+    originX = band.x + band.w / 2;
+    originY = band.dir === "up" ? band.y + band.h : band.y;
+  } else if (band.kind === "diagonal") {
+    angle = Math.atan2(band.dy || 0, band.w);
+    length = Math.hypot(band.w, band.dy || 0);
+    originY = band.y;
+  }
+
+  ctx.save();
+  ctx.translate(originX, originY);
+  ctx.rotate(angle);
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = mixHex(band.color, "#ffffff", 0.38);
+  ctx.strokeStyle = band.color;
+  ctx.shadowColor = band.color;
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.roundRect(0, -thick / 2, length, thick, 12);
+  ctx.fill();
+  ctx.globalAlpha = 0.68;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.setLineDash([18, 18]);
+  ctx.globalAlpha = 0.42;
+  ctx.strokeStyle = mixHex(band.color, "#ffffff", 0.22);
+  ctx.beginPath();
+  ctx.moveTo(0, -thick / 2 - 18);
+  ctx.lineTo(length, -thick / 2 - 18);
+  ctx.moveTo(0, thick / 2 + 18);
+  ctx.lineTo(length, thick / 2 + 18);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 0.82;
+  ctx.strokeStyle = band.color;
+  ctx.lineWidth = 7;
+  const offset = (state.time * 120) % 92;
+  for (let x = 42 + offset; x < length - 24; x += 92) {
+    ctx.beginPath();
+    ctx.moveTo(x - 24, -22);
+    ctx.lineTo(x + 12, 0);
+    ctx.lineTo(x - 24, 22);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawRouteTunnel3d(band) {
+  const nearHalf = band.h / 2;
+  const farHalf = band.h * 0.16;
+  const farY = band.vanishY ?? band.y;
+  const depth = 11;
+  const phase = (state.time * 0.42) % (1 / depth);
+  const left = band.x;
+  const right = band.x + band.w;
+
+  function point(t, side) {
+    const cx = left + band.w * t;
+    const cy = band.y + (farY - band.y) * t;
+    const half = nearHalf + (farHalf - nearHalf) * t;
+    return { x: cx, y: cy + half * side };
+  }
+
+  const nearTop = point(0, -1);
+  const nearBottom = point(0, 1);
+  const farTop = point(1, -1);
+  const farBottom = point(1, 1);
+
+  ctx.save();
+  const fill = ctx.createLinearGradient(left, band.y - nearHalf, right, farY);
+  fill.addColorStop(0, "rgba(244,114,182,0.34)");
+  fill.addColorStop(0.48, "rgba(139,92,246,0.22)");
+  fill.addColorStop(1, "rgba(32,197,214,0.18)");
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = band.color;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.shadowColor = band.color;
+  ctx.shadowBlur = 20;
+  ctx.beginPath();
+  ctx.moveTo(nearTop.x, nearTop.y);
+  ctx.lineTo(farTop.x, farTop.y);
+  ctx.lineTo(farBottom.x, farBottom.y);
+  ctx.lineTo(nearBottom.x, nearBottom.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 0.72;
+  ctx.lineWidth = 7;
+  ctx.stroke();
+
+  ctx.shadowBlur = 0;
+  for (let i = 0; i <= depth; i++) {
+    const t = Math.min(1, i / depth + phase);
+    const top = point(t, -1);
+    const bottom = point(t, 1);
+    const half = Math.abs(bottom.y - top.y) / 2;
+    const alpha = 0.82 - t * 0.44;
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = i % 2 ? colors.cyan : band.color;
+    ctx.lineWidth = Math.max(2, 7 - t * 4);
+    ctx.beginPath();
+    ctx.moveTo(top.x, top.y);
+    ctx.lineTo(bottom.x, bottom.y);
+    ctx.stroke();
+
+    ctx.globalAlpha = alpha * 0.56;
+    ctx.setLineDash([18 - t * 8, 16]);
+    ctx.beginPath();
+    ctx.moveTo(top.x, top.y + half * 0.36);
+    ctx.lineTo(bottom.x, bottom.y - half * 0.36);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  ctx.globalAlpha = 0.52;
+  ctx.strokeStyle = mixHex(band.color, "#ffffff", 0.38);
+  ctx.lineWidth = 4;
+  for (let row = -2; row <= 2; row++) {
+    const side = row / 2;
+    const start = point(0, side);
+    const end = point(1, side);
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = colors.yellow;
+  ctx.lineWidth = 7;
+  for (let i = 0; i < 6; i++) {
+    const t = ((state.time * 0.24 + i / 6) % 1);
+    const center = point(t, 0);
+    const scale = 1 - t * 0.58;
+    ctx.save();
+    ctx.translate(center.x, center.y);
+    ctx.scale(scale, scale);
+    ctx.beginPath();
+    ctx.moveTo(-30, -26);
+    ctx.lineTo(20, 0);
+    ctx.lineTo(-30, 26);
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
 function drawDecorations() {
@@ -2026,6 +2200,7 @@ function debugSnapshot() {
       sections: level.sections.length,
       hazards: level.hazards.length,
       platforms: level.platforms.length,
+      routeBands: level.routeBands?.length ?? 0,
       decorations: level.decorations.length,
     },
     audio: {

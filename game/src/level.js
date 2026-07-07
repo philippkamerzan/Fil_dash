@@ -36,6 +36,7 @@ const orbs = [];
 const autoPads = [];
 const gravityRings = [];
 const miniZones = [];
+const routeBands = [];
 const decorations = [];
 const checkpoints = [];
 const testActions = [];
@@ -85,6 +86,10 @@ function addDecor(x, y, kind, color, extra = {}) {
   decorations.push({ x, y, kind, color, ...extra });
 }
 
+function addRouteBand(x, y, w, h, kind, color, extra = {}) {
+  routeBands.push({ x, y, w, h, kind, color, ...extra });
+}
+
 function fillDecor(section, density = 86) {
   const end = section.x + section.w;
   for (let x = section.x + 60; x < end; x += density) {
@@ -113,6 +118,13 @@ function fillDecor(section, density = 86) {
 }
 
 sections.forEach((section) => fillDecor(section));
+
+addRouteBand(5120, 1050, 1500, 100, "horizontal", "#20c5d6", { label: "plane-tunnel" });
+addRouteBand(10280, 520, 126, 540, "vertical", "#8b5cf6", { dir: "up", scaleWidth: false, label: "vertical-lift" });
+addRouteBand(10920, 760, 150, 420, "vertical", "#9b7cff", { dir: "down", scaleWidth: false, label: "ghost-drop" });
+addRouteBand(12260, 860, 820, 320, "tunnel3d", "#f472b6", { vanishY: 760, label: "mini-3d-tunnel" });
+addRouteBand(13280, 935, 1180, 82, "diagonal", "#ffd84d", { dy: -250, label: "diagonal-climb" });
+addRouteBand(14040, 850, 520, 76, "diagonal", "#34d399", { dy: 150, label: "diagonal-dive" });
 
 // Section 1: acceleration on the lower floor.
 addPlatform(-120, 1120, 980);
@@ -267,12 +279,12 @@ trampolines.push(trigger(14460, 948, 78, 30, "trampoline", { vx: 382, vy: -510 }
 addSpike(13405, 946, 90, 34, "up");
 addSpike(13580, 692, 160, 6, "down");
 addSpike(14060, 946, 185, 34, "up");
-addSpike(14520, 964, 90, 16, "up");
+addSpike(14572, 966, 56, 14, "up");
 movers.push({ x: 14370, y: 1100, w: 62, h: 62, axis: "y", amp: 44, speed: 1.9, phase: 2.1, kind: "movingHazard" });
 addJump(13310, 140);
 addHold(13515, 150);
 addHold(13980, 390);
-addJump(14420);
+addJump(14420, 150);
 
 // Section 14: finish portal with a final safe runway.
 addPlatform(14600, 1040, 720, 44);
@@ -306,6 +318,11 @@ function scaleRectX(item, scaleWidth = false) {
 function scalePortalTarget(item) {
   if (item.target?.x != null) item.target.x = scaleCoord(item.target.x);
   if (item.checkpointX != null) item.checkpointX = scaleCoord(item.checkpointX);
+}
+
+function scaleRouteBand(item) {
+  item.x = scaleCoord(item.x);
+  if (item.scaleWidth !== false) item.w = scaleSize(item.w);
 }
 
 function scaleLevelToGeometryDashLength() {
@@ -343,8 +360,9 @@ function scaleLevelToGeometryDashLength() {
     orbs,
     autoPads,
     gravityRings,
-    decorations,
   ].forEach((items) => items.forEach((item) => scaleRectX(item)));
+  decorations.forEach((item) => scaleRectX(item));
+  routeBands.forEach(scaleRouteBand);
 
   mouths.forEach((mouth) => {
     mouth.x = scaleCoord(mouth.x);
@@ -381,6 +399,7 @@ export const level = {
   autoPads,
   gravityRings,
   miniZones,
+  routeBands,
   decorations,
   checkpoints,
   testActions,
