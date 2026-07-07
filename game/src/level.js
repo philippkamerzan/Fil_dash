@@ -154,18 +154,20 @@ addRouteBand(13280, 935, 1180, 82, "diagonal", "#ffd84d", { dy: -250, label: "di
 addRouteBand(14040, 850, 520, 76, "diagonal", "#34d399", { dy: 150, label: "diagonal-dive" });
 
 // Section 1: acceleration on the lower floor.
-addPlatform(-120, 1120, 980);
+addPlatform(-120, 1120, 1100);
 addSpike(260, 1086, 34, 34, "up");
 addSpikeRun(440, 1120, [1, 1], 190);
 addSpike(780, 1086, 34, 34, "up");
 addSpike(1048, 1086, 34, 34, "up");
+addSpike(1164, 1086, 30, 34, "up");
 addJump(150);
 addJump(292);
 addJump(518);
 addJump(742);
 addJump(1000);
+addJump(1135);
 boosters.push(trigger(825, 1057, 66, 66, "blueBoost", { power: 760 }));
-speedZones.push(trigger(900, 1014, 92, 132, "fast", { speed: 375 }));
+speedZones.push(trigger(900, 1014, 92, 132, "fast", { speed: 410 }));
 addPlatform(930, 1120, 280);
 
 // Section 2: rhythmic spike groups and a down-dot drop cue.
@@ -178,6 +180,7 @@ addJump(1590);
 addJump(1812);
 addJump(2040);
 addJump(2145);
+addJump(2205, 110);
 downDots.push(trigger(2055, 820, 96, 130, "downImpulse", { power: 760 }));
 
 // Section 3: bad jump trap that throws the player into visible spikes.
@@ -185,15 +188,15 @@ addPlatform(2240, 1120, 840);
 traps.push(trigger(2440, 998, 46, 48, "badJump"));
 addSpike(2670, 1086, 90, 34, "up");
 addSpike(2915, 1086, 54, 34, "up");
-addSpike(2270, 1086, 52, 34, "up");
+addSpike(2360, 1086, 52, 34, "up");
 addJump(2825);
-speedZones.push(trigger(2860, 1016, 94, 130, "slow", { speed: 315 }));
+speedZones.push(trigger(2860, 1016, 94, 130, "slow", { speed: 338 }));
 
 // Section 4: yellow hold-flight between ceiling and floor spikes.
 addPlatform(3060, 1120, 180);
-yellowZones.push(trigger(3160, 760, 1250, 340, "yellowFlight", { targetY: 850, minSpeed: 392 }));
-addSpike(3200, 760, 1060, 42, "down", { scaleWidth: true });
-addSpike(3250, 1090, 990, 30, "up", { scaleWidth: true });
+yellowZones.push(trigger(3160, 760, 1250, 340, "yellowFlight", { targetY: 850, minSpeed: 430 }));
+addSpike(3200, 760, 1060, 62, "down", { scaleWidth: true });
+addSpike(3250, 1066, 990, 54, "up", { scaleWidth: true });
 addHold(3160, 1250);
 addPlatform(4380, 1120, 370);
 trampolines.push(trigger(4460, 1088, 88, 30, "trampoline", { vx: 380, vy: -640 }));
@@ -205,12 +208,13 @@ boosters.push(trigger(4670, 790, 120, 420, "portalDown", {
 addSpike(5100, 830, 1600, 38, "down", { scaleWidth: true });
 addSpike(5100, 1282, 1600, 38, "up", { scaleWidth: true });
 mouths.push(
-  { x: 5570, top: 870, bottom: 1268, gapY: 960, gapH: 170, closed: false, passed: false },
-  { x: 6230, top: 850, bottom: 1268, gapY: 950, gapH: 255, closed: false, passed: false },
-  { x: 6480, top: 850, bottom: 1268, gapY: 965, gapH: 250, closed: false, passed: false },
+  { x: 5570, top: 870, bottom: 1268, gapY: 962, gapH: 145, closed: false, passed: false },
+  { x: 6230, top: 850, bottom: 1268, gapY: 1010, gapH: 205, closed: false, passed: false },
+  { x: 6480, top: 850, bottom: 1268, gapY: 1012, gapH: 195, closed: false, passed: false },
 );
 movers.push({ x: 6035, y: 1138, w: 48, h: 56, axis: "y", amp: 72, speed: 1.55, phase: 1.1, kind: "movingHazard" });
 movers.push({ x: 6360, y: 935, w: 42, h: 54, axis: "y", amp: 58, speed: 1.9, phase: 0.55, kind: "movingHazard" });
+movers.push({ x: 5805, y: 990, w: 38, h: 52, axis: "y", amp: 68, speed: 2.15, phase: 2.5, kind: "movingHazard" });
 portals.push(trigger(6715, 982, 104, 170, "planeOut", {
   target: { x: 6900, y: 896, mode: "cube", gravity: 1 },
 }));
@@ -230,7 +234,7 @@ addJump(7630);
 addJump(7880);
 addJump(7990);
 addJump(6960);
-speedZones.push(trigger(7780, 824, 100, 132, "fast", { speed: 405 }));
+speedZones.push(trigger(7780, 824, 100, 132, "fast", { speed: 442 }));
 
 // Section 8 and 9: orange gravity portal and ceiling run.
 portals.push(trigger(8110, 806, 104, 160, "gravityFlip", {
@@ -244,6 +248,7 @@ addSpike(9580, 542, 56, 16, "down");
 addSpike(9860, 542, 52, 16, "down");
 addSpike(8740, 362, 96, 24, "up");
 addSpike(9300, 362, 118, 24, "up");
+addSpike(9695, 362, 90, 24, "up");
 movers.push({ x: 9520, y: 760, w: 58, h: 58, axis: "x", amp: 90, speed: 1.35, phase: 0.2, kind: "movingHazard" });
 gravityRings.push(trigger(9550, 620, 58, 58, "gravityRing", { targetGravity: -1, impulse: 520 }));
 addHold(8420, 180);
@@ -274,32 +279,35 @@ addSpike(10870, 866, 34, 34, "up");
 addSpike(11320, 1086, 42, 34, "up");
 addSpike(11695, 1086, 34, 34, "up");
 addSpike(11900, 866, 170, 34, "up");
+addSpike(12150, 866, 34, 34, "up");
 addJump(10820);
 addJump(10940);
 addJump(11250);
 addJump(11510);
 addJump(11645);
 addJump(11820);
+addJump(12100);
 movers.push({ x: 11760, y: 790, w: 52, h: 60, axis: "y", amp: 62, speed: 1.7, phase: 1.5, kind: "movingHazard" });
+movers.push({ x: 11420, y: 940, w: 46, h: 56, axis: "x", amp: 72, speed: 1.95, phase: 0.4, kind: "movingHazard" });
 
 // Section 12: mini mode and dense short jumps.
 addPlatform(12200, 980, 360, 44);
 addPlatform(12240, 900, 980, 44);
 miniZones.push(trigger(12280, 760, 820, 300, "mini", { enabled: true }));
-speedZones.push(trigger(12320, 804, 100, 132, "fast", { speed: 435 }));
+speedZones.push(trigger(12320, 804, 100, 132, "fast", { speed: 478 }));
 addSpike(12470, 884, 26, 16, "up");
+addSpike(12575, 884, 22, 16, "up");
 addSpike(12680, 884, 24, 16, "up");
-addSpikeRun(12820, 900, [1, 1], 108, 28);
-addSpike(13070, 884, 22, 16, "up");
+addSpikeRun(12820, 900, [1, 1, 1], 104, 28);
 orbs.push(
   trigger(12610, 760, 42, 42, "jumpOrb", { power: 540, color: "#f472b6" }),
   trigger(12920, 750, 42, 42, "jumpOrb", { power: 560, color: "#20c5d6" }),
 );
 addJump(12300, 150);
 addJump(12410);
+addJump(12535);
 addJump(12560);
 addJump(12880);
-addJump(13030);
 addJump(13100);
 
 // Section 13: final mix with short gravity rings, moving hazards and a yellow burst.
@@ -308,14 +316,17 @@ gravityRings.push(trigger(13440, 835, 62, 62, "gravityRing", { targetGravity: -1
 addPlatform(13400, 650, 540, 42);
 gravityRings.push(trigger(13860, 742, 62, 62, "gravityRing", { targetGravity: 1, impulse: 520 }));
 addPlatform(13820, 980, 780, 44);
-yellowZones.push(trigger(14020, 825, 390, 230, "yellowFlight", { targetY: 880, minSpeed: 404 }));
-trampolines.push(trigger(14460, 948, 78, 30, "trampoline", { vx: 404, vy: -510 }));
+yellowZones.push(trigger(14020, 825, 390, 230, "yellowFlight", { targetY: 880, minSpeed: 438 }));
+trampolines.push(trigger(14460, 948, 78, 30, "trampoline", { vx: 438, vy: -510 }));
 addSpike(13405, 946, 90, 34, "up");
 addSpike(13580, 692, 160, 6, "down");
+addSpike(13920, 946, 42, 34, "up");
 movers.push({ x: 14370, y: 1100, w: 62, h: 62, axis: "y", amp: 44, speed: 1.9, phase: 2.1, kind: "movingHazard" });
 movers.push({ x: 13780, y: 846, w: 46, h: 52, axis: "x", amp: 76, speed: 1.7, phase: 1.3, kind: "movingHazard" });
+movers.push({ x: 14155, y: 880, w: 44, h: 52, axis: "y", amp: 56, speed: 2.25, phase: 0.9, kind: "movingHazard" });
 addJump(13310, 140);
 addHold(13515, 150);
+addJump(13885, 160);
 addHold(13940, 500);
 addJump(14420, 150);
 
@@ -323,8 +334,10 @@ addJump(14420, 150);
 addPlatform(14600, 1040, 720, 44);
 addSpike(14735, 1006, 38, 34, "up");
 addSpike(14965, 1006, 42, 34, "up");
+addSpike(15045, 1006, 32, 34, "up");
 addJump(14640);
 addJump(14900);
+addJump(15010);
 portals.push(trigger(15100, 896, 120, 190, "finish"));
 
 function scaleCoord(value) {

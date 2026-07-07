@@ -419,7 +419,7 @@ function restartFromCheckpoint(countAttempt = true) {
   const spawn = structuredClone(TEST_RUN && TEST_SECTION ? state.checkpoint : WORLD.start);
   player.x = spawn.x;
   player.y = spawn.y;
-  player.vx = spawn.mode === "plane" ? 365 : 320;
+  player.vx = spawn.mode === "plane" ? 390 : 340;
   player.vy = 0;
   player.mode = spawn.mode;
   player.gravity = spawn.gravity;
@@ -671,10 +671,10 @@ function updateParticles(dt) {
 
 function targetSpeed() {
   const section = activeSection();
-  let speed = player.mini ? 398 : 358;
-  if (section.id === "spikes" || section.id === "cube-return") speed = 374;
-  if (section.id === "mini") speed = 404;
-  if (section.id === "mix") speed = 394;
+  let speed = player.mini ? 426 : 384;
+  if (section.id === "spikes" || section.id === "cube-return") speed = 404;
+  if (section.id === "mini") speed = 438;
+  if (section.id === "mix") speed = 424;
   for (const zone of level.speedZones) {
     if (rectsOverlap(playerRect(), zone)) speed = zone.speed;
   }
@@ -698,9 +698,9 @@ function updateCube(dt) {
     }
   }
 
-  const target = player.yellowActive ? 448 : targetSpeed();
+  const target = player.yellowActive ? 488 : targetSpeed();
   player.vx += (target - player.vx) * Math.min(1, dt * 7.2);
-  player.vx = Math.max(270, Math.min(player.yellowActive ? 480 : 454, player.vx));
+  player.vx = Math.max(290, Math.min(player.yellowActive ? 518 : 486, player.vx));
 
   if (keys.jump && player.onGround && !player.jumpLatch) {
     const jumpPower = player.mini ? 555 : 625;
@@ -728,7 +728,7 @@ function updateCube(dt) {
 }
 
 function updatePlane(dt) {
-  player.vx += (372 - player.vx) * Math.min(1, dt * 7);
+  player.vx += (402 - player.vx) * Math.min(1, dt * 7);
   player.vy += (keys.jump ? -1030 : 820) * dt;
   player.vy *= 0.988;
   player.vy = Math.max(-390, Math.min(390, player.vy));
