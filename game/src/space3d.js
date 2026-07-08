@@ -1,18 +1,45 @@
 const THREE_URL = "https://unpkg.com/three@0.165.0/build/three.module.js";
 
-export async function startSpace3dLayer(canvas, getState) {
+export async function startSpace3dLayer(canvas, getState, options = {}) {
   try {
     const THREE = await import(THREE_URL);
-    return createThreeLayer(THREE, canvas, getState);
+    return createThreeLayer(THREE, canvas, getState, options);
   } catch {
-    const fallback = createFallbackLayer(canvas, getState);
+    const fallback = createFallbackLayer(canvas, getState, options);
     fallback.start();
     return fallback;
   }
 }
 
-function createThreeLayer(THREE, canvas, getState) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+function numberOption(value, fallback) {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function createProfile(options = {}) {
+  const lowPower = !!options.lowPower;
+  return {
+    lowPower,
+    maxDpr: numberOption(options.maxDpr, lowPower ? 0.8 : 1.2),
+    fps: numberOption(options.fps, lowPower ? 24 : 30),
+    idleFps: numberOption(options.idleFps, lowPower ? 6 : 10),
+    starCount: numberOption(options.starCount, lowPower ? 280 : 640),
+    rings: numberOption(options.rings, lowPower ? 8 : 12),
+    ringSegments: numberOption(options.ringSegments, lowPower ? 32 : 56),
+    asteroids: numberOption(options.asteroids, lowPower ? 10 : 22),
+    fallbackStars: numberOption(options.fallbackStars, lowPower ? 64 : 120),
+    fallbackRings: numberOption(options.fallbackRings, lowPower ? 8 : 14),
+  };
+}
+
+function createThreeLayer(THREE, canvas, getState, options) {
+  const profile = createProfile(options);
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: !profile.lowPower,
+    alpha: false,
+    powerPreference: "high-performance",
+    stencil: false,
+  });
   renderer.setClearColor(0x040716, 1);
   const scene = new THREE.Scene();
   scene.fog = new THREE.FogExp2(0x09122c, 0.024);
@@ -25,17 +52,17 @@ function createThreeLayer(THREE, canvas, getState) {
   key.position.set(5, 8, 10);
   scene.add(ambient, key);
 
-  const stars = createStars(THREE);
+  const stars = createStars(THREE, profile.starCount);
   scene.add(stars);
 
   const tunnel = [];
-  const ringGeometry = new THREE.TorusGeometry(6.2, 0.045, 8, 72);
+  const ringGeometry = new THREE.TorusGeometry(6.2, 0.045, profile.lowPower ? 5 : 8, profile.ringSegments);
   const ringMaterials = [
     new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.42 }),
     new THREE.MeshBasicMaterial({ color: 0xf472b6, transparent: true, opacity: 0.34 }),
     new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.3 }),
   ];
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < profile.rings; i++) {
     const ring = new THREE.Mesh(ringGeometry, ringMaterials[i % ringMaterials.length]);
     ring.position.z = -i * 8;
     ring.rotation.x = Math.PI / 2;
@@ -45,13 +72,12 @@ function createThreeLayer(THREE, canvas, getState) {
 
   const asteroids = [];
   const asteroidGeometry = new THREE.IcosahedronGeometry(0.55, 0);
-  const asteroidMaterial = new THREE.MeshStandardMaterial({
+  const asteroidMaterial = new THREE.MeshBasicMaterial({
     color: 0xbfd2ff,
-    roughness: 0.82,
-    metalness: 0.08,
-    emissive: 0x111933,
+    transparent: true,
+    opacity: 0.74,
   });
-  for (let i = 0; i < 34; i++) {
+  for (let i = 0; i < profile.asteroids; i++) {
     const rock = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
     rock.position.set(
       ((i * 47) % 100) / 10 - 5,
@@ -65,12 +91,13 @@ function createThreeLayer(THREE, canvas, getState) {
   }
 
   let frame = 0;
+  let lastRenderAt = -Infinity;
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    const width = Math.max(1, Math.floor(rect.width));
-    const height = Math.max(1, Math.floor(rect.height));
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const width = Math.max(1, Math.floor(canvas.clientWidth || rect.width));
+    const height = Math.max(1, Math.floor(canvas.clientHeight || rect.height));
+    const dpr = Math.max(0.65, Math.min(profile.maxDpr, window.devicePixelRatio || 1));
     if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
       renderer.setPixelRatio(dpr);
       renderer.setSize(width, height, false);
@@ -79,10 +106,13 @@ function createThreeLayer(THREE, canvas, getState) {
     }
   }
 
-  function render() {
+  function render(now = performance.now()) {
     frame = requestAnimationFrame(render);
-    resize();
     const state = getState();
+    const targetFps = state.running ? profile.fps : profile.idleFps;
+    if (now - lastRenderAt < 1000 / targetFps) return;
+    lastRenderAt = now;
+    resize();
     const time = state.time || performance.now() / 1000;
     const thrust = state.running ? 1 : 0.36;
     const progressShift = (state.progress || 0) * 48;
@@ -121,8 +151,7 @@ function createThreeLayer(THREE, canvas, getState) {
   };
 }
 
-function createStars(THREE) {
-  const count = 960;
+function createStars(THREE, count = 640) {
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
   const palette = [
@@ -155,15 +184,17 @@ function createStars(THREE) {
   return new THREE.Points(geometry, material);
 }
 
-function createFallbackLayer(canvas, getState) {
+function createFallbackLayer(canvas, getState, options = {}) {
+  const profile = createProfile(options);
   const ctx = canvas.getContext("2d");
   let frame = 0;
+  let lastRenderAt = -Infinity;
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    const width = Math.max(1, Math.floor(rect.width));
-    const height = Math.max(1, Math.floor(rect.height));
+    const dpr = Math.max(0.65, Math.min(profile.maxDpr, window.devicePixelRatio || 1));
+    const width = Math.max(1, Math.floor(canvas.clientWidth || rect.width));
+    const height = Math.max(1, Math.floor(canvas.clientHeight || rect.height));
     if (canvas.width !== Math.floor(width * dpr) || canvas.height !== Math.floor(height * dpr)) {
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
@@ -172,10 +203,13 @@ function createFallbackLayer(canvas, getState) {
     return { width, height };
   }
 
-  function render() {
+  function render(now = performance.now()) {
     frame = requestAnimationFrame(render);
-    const { width, height } = resize();
     const state = getState();
+    const targetFps = state.running ? profile.fps : profile.idleFps;
+    if (now - lastRenderAt < 1000 / targetFps) return;
+    lastRenderAt = now;
+    const { width, height } = resize();
     const time = state.time || performance.now() / 1000;
     const progress = state.progress || 0;
     const gradient = ctx.createLinearGradient(0, 0, width, height);
@@ -187,8 +221,8 @@ function createFallbackLayer(canvas, getState) {
 
     ctx.save();
     ctx.translate(width / 2, height / 2);
-    for (let i = 0; i < 18; i++) {
-      const t = ((i / 18 + time * 0.28 + progress) % 1);
+    for (let i = 0; i < profile.fallbackRings; i++) {
+      const t = ((i / profile.fallbackRings + time * 0.28 + progress) % 1);
       const scale = 0.08 + t * 1.18;
       ctx.globalAlpha = 0.12 + t * 0.38;
       ctx.strokeStyle = i % 3 === 0 ? "#38bdf8" : i % 3 === 1 ? "#f472b6" : "#fde047";
@@ -199,7 +233,7 @@ function createFallbackLayer(canvas, getState) {
     }
     ctx.restore();
 
-    for (let i = 0; i < 160; i++) {
+    for (let i = 0; i < profile.fallbackStars; i++) {
       const x = (i * 97 + time * 80) % (width + 160) - 80;
       const y = (i * 53 + Math.sin(i) * 80 + time * 18) % (height + 120) - 60;
       ctx.globalAlpha = 0.28 + (i % 5) * 0.08;

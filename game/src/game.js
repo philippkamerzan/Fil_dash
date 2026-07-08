@@ -1,5 +1,5 @@
 import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=56";
-import { startSpace3dLayer } from "./space3d.js?v=1";
+import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -39,6 +39,7 @@ const TEST_RUN = searchParams.has("testRun");
 const TEST_SECTION = searchParams.get("section") || "";
 const TEST_TIME_SCALE = Number(searchParams.get("timeScale")) || 1;
 const TEST_VARIANT = normalizeTestVariant(searchParams.get("variant"));
+const SPACE_3D_SETTING = String(searchParams.get("space3d") || "").trim().toLowerCase();
 const LEADERBOARD_API_URL = searchParams.get("leaderboardApi") || window.FIL_DASH_LEADERBOARD_API || "/api/leaderboard";
 const LEGACY_LOCAL_RECORDS_KEY = "filDash.records.v1";
 const LOCAL_RECORDS_KEY = `filDash.records.${LEVEL_ID}.v1`;
@@ -52,6 +53,20 @@ const HOLD_THRESHOLD_SECONDS = 0.1;
 const HOLD_CAP_SECONDS = 0.32;
 const INPUT_SPAM_GUARD_SECONDS = 0.08;
 const TEST_VARIANT_TIME_SHIFT = TEST_VARIANT === "early" ? -0.08 : TEST_VARIANT === "late" ? 0.08 : 0;
+const TOUCH_DEVICE = navigator.maxTouchPoints > 0 || window.matchMedia?.("(pointer: coarse)")?.matches;
+const SMALL_VIEWPORT = Math.min(window.innerWidth, window.innerHeight) < 520;
+const LOW_CPU_HINT = (navigator.hardwareConcurrency || 4) <= 4;
+const SPACE_PERF_MODE = SPACE_LEVEL && !TEST_RUN && SPACE_3D_SETTING !== "high" && (TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT || SPACE_3D_SETTING === "low");
+const SPACE_3D_DISABLED = SPACE_LEVEL && (SPACE_3D_SETTING === "off" || SPACE_3D_SETTING === "0");
+const MAX_CANVAS_DPR = SPACE_PERF_MODE ? 1.15 : 2;
+const DEBUG_DATASET_INTERVAL_MS = TEST_RUN ? 0 : 180;
+const SPACE_STAR_COUNT = SPACE_PERF_MODE ? 62 : 140;
+const SPACE_GRID_ROWS = SPACE_PERF_MODE ? 10 : 18;
+const SPACE_RAY_SPAN = SPACE_PERF_MODE ? 4 : 7;
+const SPACE_STREAK_COUNT = SPACE_PERF_MODE ? 14 : 30;
+const SPACE_TUNNEL_DEPTH = SPACE_PERF_MODE ? 6 : 11;
+const SPACE_TUNNEL_ARROWS = SPACE_PERF_MODE ? 3 : 6;
+const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
 
 const keys = {
   jump: false,
@@ -170,6 +185,7 @@ let audioCtx;
 let levelMusic;
 let levelMusicGestureRetryBound = false;
 let levelMusicPlayWarningShown = false;
+let lastDebugDatasetWrite = 0;
 
 window.addEventListener("error", (event) => {
   state.errors.push(String(event.message || "window error"));
@@ -515,7 +531,7 @@ function levelLeaderboardUrl() {
 }
 
 function resize() {
-  dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  dpr = Math.max(1, Math.min(MAX_CANVAS_DPR, window.devicePixelRatio || 1));
   const forcedLandscape = forcedLandscapeViewport();
   document.body.classList.toggle("force-landscape", forcedLandscape);
   viewW = Math.floor(forcedLandscape ? window.innerHeight : window.innerWidth);
@@ -1374,6 +1390,7 @@ function updateTrail(dt, active) {
       gravity: player.gravity,
       mini: player.mini,
     });
+    if (player.trail.length > MAX_TRAIL_POINTS) player.trail.splice(0, player.trail.length - MAX_TRAIL_POINTS);
   }
   for (const t of player.trail) t.life -= dt * (keys.jump ? 0.9 : 2.2);
   player.trail = player.trail.filter((t) => t.life > 0);
@@ -1501,16 +1518,16 @@ function drawSpaceBackground(section, beat) {
   ctx.globalAlpha = 0.26 + beat * 0.08;
   ctx.strokeStyle = mixHex(section.accent, "#ffffff", 0.28);
   ctx.lineWidth = 1.8;
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < SPACE_GRID_ROWS; i++) {
     const y = viewH * (0.18 + i * 0.05) + (baseY % 80);
-    const half = viewW * (0.06 + i * 0.028);
+    const half = viewW * (0.06 + i * 0.032);
     ctx.beginPath();
     ctx.moveTo(viewW / 2 - half, y);
     ctx.lineTo(viewW / 2 + half, y);
     ctx.stroke();
   }
   ctx.globalAlpha = 0.18;
-  for (let i = -7; i <= 7; i++) {
+  for (let i = -SPACE_RAY_SPAN; i <= SPACE_RAY_SPAN; i++) {
     ctx.beginPath();
     ctx.moveTo(viewW / 2 + i * 26, viewH * 0.08);
     ctx.lineTo(viewW / 2 + i * 118 + (baseX % 120), viewH + 80);
@@ -1518,7 +1535,7 @@ function drawSpaceBackground(section, beat) {
   }
   ctx.restore();
 
-  for (let i = 0; i < 140; i++) {
+  for (let i = 0; i < SPACE_STAR_COUNT; i++) {
     const x = (baseX * 2.4 + i * 97 + state.time * 28) % (viewW + 260) - 130;
     const y = (baseY * 2.1 + i * 53 + Math.sin(i * 1.7) * 92) % (viewH + 220) - 90;
     ctx.globalAlpha = 0.24 + (i % 5) * 0.07;
@@ -1664,7 +1681,7 @@ function drawSpeedStreaks(section) {
   ctx.strokeStyle = mixHex(section.accent, "#ffffff", 0.16);
   ctx.lineWidth = 2.4 + intensity * 2.2;
   ctx.lineCap = "round";
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < SPACE_STREAK_COUNT; i++) {
     const x = (viewW - ((camera.x * 0.62 + state.time * 240 + i * 117) % (viewW + 240))) + 90;
     const y = ((camera.y * 0.05 + i * 49 + Math.sin(state.time * 2 + i) * 18) % (viewH + 110)) - 55;
     const len = 62 + intensity * 96 + (i % 3) * 18;
@@ -1775,7 +1792,7 @@ function drawRouteBand(band) {
   ctx.fillStyle = mixHex(band.color, "#ffffff", 0.38);
   ctx.strokeStyle = band.color;
   ctx.shadowColor = band.color;
-  ctx.shadowBlur = 18;
+  ctx.shadowBlur = SPACE_PERF_MODE ? 0 : 18;
   ctx.lineWidth = 6;
   ctx.beginPath();
   ctx.roundRect(0, -thick / 2, length, thick, 12);
@@ -1811,7 +1828,7 @@ function drawRouteTunnel3d(band) {
   const nearHalf = band.h / 2;
   const farHalf = band.h * 0.16;
   const farY = band.vanishY ?? band.y;
-  const depth = 11;
+  const depth = SPACE_TUNNEL_DEPTH;
   const phase = (state.time * 0.42) % (1 / depth);
   const left = band.x;
   const right = band.x + band.w;
@@ -1838,7 +1855,7 @@ function drawRouteTunnel3d(band) {
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   ctx.shadowColor = band.color;
-  ctx.shadowBlur = 20;
+  ctx.shadowBlur = SPACE_PERF_MODE ? 0 : 20;
   ctx.beginPath();
   ctx.moveTo(nearTop.x, nearTop.y);
   ctx.lineTo(farTop.x, farTop.y);
@@ -1890,8 +1907,8 @@ function drawRouteTunnel3d(band) {
   ctx.globalAlpha = 0.9;
   ctx.strokeStyle = colors.yellow;
   ctx.lineWidth = 7;
-  for (let i = 0; i < 6; i++) {
-    const t = ((state.time * 0.24 + i / 6) % 1);
+  for (let i = 0; i < SPACE_TUNNEL_ARROWS; i++) {
+    const t = ((state.time * 0.24 + i / SPACE_TUNNEL_ARROWS) % 1);
     const center = point(t, 0);
     const scale = 1 - t * 0.58;
     ctx.save();
@@ -1928,7 +1945,7 @@ function drawDecorations() {
     }
     if (d.kind === "star") {
       ctx.shadowColor = d.color;
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = SPACE_PERF_MODE ? 0 : 12;
       ctx.lineWidth = 4;
       for (let i = 0; i < 4; i++) {
         ctx.rotate(Math.PI / 4);
@@ -1941,7 +1958,7 @@ function drawDecorations() {
     }
     if (d.kind === "comet") {
       ctx.shadowColor = d.color;
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = SPACE_PERF_MODE ? 0 : 14;
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.moveTo(-34, 14);
@@ -3141,10 +3158,20 @@ function debugSnapshot() {
       ownedSkins: [...economy.ownedSkins],
       rewardKey: RECORD_REWARDS_KEY,
     },
+    perf: {
+      spacePerfMode: SPACE_PERF_MODE,
+      space3dDisabled: SPACE_3D_DISABLED,
+      maxCanvasDpr: MAX_CANVAS_DPR,
+      dpr: Math.round(dpr * 100) / 100,
+      debugDatasetIntervalMs: DEBUG_DATASET_INTERVAL_MS,
+    },
   };
 }
 
-function writeDebugDataset() {
+function writeDebugDataset(force = false) {
+  const now = performance.now();
+  if (!force && DEBUG_DATASET_INTERVAL_MS > 0 && now - lastDebugDatasetWrite < DEBUG_DATASET_INTERVAL_MS) return;
+  lastDebugDatasetWrite = now;
   canvas.dataset.debug = JSON.stringify(debugSnapshot());
 }
 
@@ -3162,7 +3189,7 @@ function hexToRgb(hex) {
 
 window.__FIL_DASH_DEBUG__ = debugSnapshot;
 
-if (SPACE_LEVEL && space3dCanvas) {
+if (SPACE_LEVEL && space3dCanvas && !SPACE_3D_DISABLED) {
   gameShell.classList.add("space3d-active");
   startSpace3dLayer(space3dCanvas, () => ({
     time: state.time,
@@ -3170,7 +3197,12 @@ if (SPACE_LEVEL && space3dCanvas) {
     speed: player.vx,
     running: state.running && !state.paused && player.deadTimer <= 0,
     accent: state.currentSection?.accent || colors.cyan,
-  })).catch(() => {
+  }), {
+    lowPower: SPACE_PERF_MODE,
+    maxDpr: SPACE_PERF_MODE ? 0.8 : 1.2,
+    fps: SPACE_PERF_MODE ? 24 : 30,
+    idleFps: SPACE_PERF_MODE ? 6 : 10,
+  }).catch(() => {
     space3dCanvas.dataset.failed = "true";
   });
 }
@@ -3188,7 +3220,7 @@ if (TEST_RUN && sectionSpawns[TEST_SECTION]) {
   state.checkpoint = { ...structuredClone(sectionSpawns[TEST_SECTION]), xKey: sectionSpawns[TEST_SECTION].x };
 }
 restartFromCheckpoint(false);
-writeDebugDataset();
+writeDebugDataset(true);
 updateHud();
 if (TEST_RUN) {
   state.running = true;
