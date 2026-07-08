@@ -1,7 +1,9 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=2";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=3";
+import { startSpace3dLayer } from "./space3d.js?v=1";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
+const space3dCanvas = document.querySelector("#space3d");
 const gameShell = document.querySelector(".game-shell");
 const overlay = document.querySelector("#overlay");
 const pauseOverlay = document.querySelector("#pauseOverlay");
@@ -25,6 +27,7 @@ const level = getLevelById(searchParams.get("level") || searchParams.get("levelI
 const WORLD = level.world;
 const LEVEL_SCALE = level.scale;
 const LEVEL_ID = level.id;
+const SPACE_LEVEL = level.renderMode === "space3d";
 const TEST_RUN = searchParams.has("testRun");
 const TEST_SECTION = searchParams.get("section") || "";
 const TEST_TIME_SCALE = Number(searchParams.get("timeScale")) || 1;
@@ -725,6 +728,7 @@ function updateParticles(dt) {
 
 function targetSpeed() {
   const section = activeSection();
+  const multiplier = level.speedMultiplier ?? 1;
   let speed = player.mini ? 426 : 384;
   if (section.id === "spikes" || section.id === "cube-return") speed = 404;
   if (section.id === "mini") speed = 438;
@@ -732,7 +736,7 @@ function targetSpeed() {
   for (const zone of level.speedZones) {
     if (rectsOverlap(playerRect(), zone)) speed = zone.speed;
   }
-  return speed;
+  return speed * multiplier;
 }
 
 function updateCube(dt) {
@@ -752,9 +756,12 @@ function updateCube(dt) {
     }
   }
 
-  const target = player.yellowActive ? 488 : targetSpeed();
+  const target = player.yellowActive ? 488 * (level.speedMultiplier ?? 1) : targetSpeed();
   player.vx += (target - player.vx) * Math.min(1, dt * 7.2);
-  player.vx = Math.max(290, Math.min(player.yellowActive ? 518 : 486, player.vx));
+  const maxSpeed = player.yellowActive
+    ? (level.maxYellowSpeed ?? 518)
+    : (level.maxCubeSpeed ?? 486);
+  player.vx = Math.max(290, Math.min(maxSpeed, player.vx));
 
   if (keys.jump && player.onGround && !player.jumpLatch) {
     const jumpPower = player.mini ? 555 : 625;
@@ -1198,6 +1205,10 @@ function draw() {
 function drawBackground() {
   const section = state.currentSection || level.sections[0];
   const beat = 0.5 + Math.sin(state.time * 7.4) * 0.5;
+  if (SPACE_LEVEL) {
+    drawSpaceBackground(section, beat);
+    return;
+  }
   const g = ctx.createLinearGradient(0, 0, viewW, viewH);
   g.addColorStop(0, mixHex(section.accent, "#fbf3e4", 0.68));
   g.addColorStop(0.48, mixHex(section.accent, "#f7f0e4", 0.9));
@@ -1256,6 +1267,57 @@ function drawBackground() {
       ctx.lineTo(x + 18, y + 12);
       ctx.moveTo(x + 18, y - 12);
       ctx.lineTo(x + 34, y + 12);
+      ctx.stroke();
+    }
+  }
+  drawSpeedStreaks(section);
+  ctx.globalAlpha = 1;
+}
+
+function drawSpaceBackground(section, beat) {
+  const baseX = -camera.x * 0.08;
+  const baseY = -camera.y * 0.05;
+  const g = ctx.createLinearGradient(0, 0, viewW, viewH);
+  g.addColorStop(0, "rgba(3, 7, 24, 0.72)");
+  g.addColorStop(0.52, "rgba(10, 22, 58, 0.58)");
+  g.addColorStop(1, "rgba(28, 13, 62, 0.62)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, viewW, viewH);
+
+  ctx.save();
+  ctx.globalAlpha = 0.26 + beat * 0.08;
+  ctx.strokeStyle = mixHex(section.accent, "#ffffff", 0.28);
+  ctx.lineWidth = 1.8;
+  for (let i = 0; i < 18; i++) {
+    const y = viewH * (0.18 + i * 0.05) + (baseY % 80);
+    const half = viewW * (0.06 + i * 0.028);
+    ctx.beginPath();
+    ctx.moveTo(viewW / 2 - half, y);
+    ctx.lineTo(viewW / 2 + half, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.18;
+  for (let i = -7; i <= 7; i++) {
+    ctx.beginPath();
+    ctx.moveTo(viewW / 2 + i * 26, viewH * 0.08);
+    ctx.lineTo(viewW / 2 + i * 118 + (baseX % 120), viewH + 80);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  for (let i = 0; i < 140; i++) {
+    const x = (baseX * 2.4 + i * 97 + state.time * 28) % (viewW + 260) - 130;
+    const y = (baseY * 2.1 + i * 53 + Math.sin(i * 1.7) * 92) % (viewH + 220) - 90;
+    ctx.globalAlpha = 0.24 + (i % 5) * 0.07;
+    ctx.fillStyle = i % 4 === 0 ? "#fde047" : i % 4 === 1 ? "#7dd3fc" : i % 4 === 2 ? "#f9a8d4" : section.accent;
+    ctx.fillRect(x, y, 2 + (i % 3), 2 + (i % 3));
+    if (i % 11 === 0) {
+      ctx.globalAlpha = 0.28;
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 28, y + 6);
+      ctx.lineTo(x + 36, y - 4);
       ctx.stroke();
     }
   }
@@ -1535,6 +1597,65 @@ function drawDecorations() {
       ctx.arc(0, 0, 12, 0, Math.PI * 2);
       ctx.stroke();
     }
+    if (d.kind === "star") {
+      ctx.shadowColor = d.color;
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 4;
+      for (let i = 0; i < 4; i++) {
+        ctx.rotate(Math.PI / 4);
+        ctx.beginPath();
+        ctx.moveTo(-18, 0);
+        ctx.lineTo(18, 0);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+    }
+    if (d.kind === "comet") {
+      ctx.shadowColor = d.color;
+      ctx.shadowBlur = 14;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-34, 14);
+      ctx.lineTo(8, -6);
+      ctx.lineTo(34, -2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(35, -2, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    if (d.kind === "asteroid") {
+      ctx.fillStyle = mixHex(d.color, "#0f172a", 0.36);
+      ctx.strokeStyle = mixHex(d.color, "#ffffff", 0.28);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-18, -8);
+      ctx.lineTo(-4, -20);
+      ctx.lineTo(18, -12);
+      ctx.lineTo(23, 7);
+      ctx.lineTo(5, 20);
+      ctx.lineTo(-20, 13);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    if (d.kind === "ringPlanet") {
+      ctx.save();
+      ctx.rotate(-0.35);
+      ctx.strokeStyle = mixHex(d.color, "#ffffff", 0.22);
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 44, 13, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = mixHex(d.color, "#ffffff", 0.24);
+      ctx.strokeStyle = d.color;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
     if (d.kind === "dotCluster") {
       for (let i = 0; i < 7; i++) {
         ctx.beginPath();
@@ -1617,6 +1738,10 @@ function drawDecorations() {
 function drawPlatforms() {
   for (const p of level.platforms) {
     if (!isVisible(p)) continue;
+    if (SPACE_LEVEL && !p.kind.startsWith("ghost")) {
+      drawSpacePlatform(p);
+      continue;
+    }
     ctx.save();
     const ghost = p.kind.startsWith("ghost");
     ctx.globalAlpha = p.kind === "ghost-pass" ? 0.38 + Math.sin(state.time * 5 + p.x) * 0.12 : ghost ? 0.7 : 1;
@@ -1632,6 +1757,44 @@ function drawPlatforms() {
     if (p.kind === "ghost-pass") drawPassCue(p.x + p.w / 2, p.y - 20);
     ctx.restore();
   }
+}
+
+function drawSpacePlatform(p) {
+  ctx.save();
+  const glow = state.currentSection?.accent || colors.cyan;
+  const top = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+  top.addColorStop(0, "rgba(226, 242, 255, 0.96)");
+  top.addColorStop(0.46, "rgba(191, 219, 254, 0.88)");
+  top.addColorStop(1, "rgba(15, 23, 42, 0.88)");
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 14;
+  ctx.fillStyle = top;
+  ctx.strokeStyle = "#050816";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.roundRect(p.x, p.y, p.w, p.h, 5);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = glow;
+  ctx.lineWidth = 2;
+  for (let x = p.x + 22; x < p.x + p.w - 18; x += 58) {
+    ctx.beginPath();
+    ctx.moveTo(x, p.y + 10);
+    ctx.lineTo(x + 30, p.y + p.h - 10);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.78;
+  ctx.strokeStyle = mixHex(glow, "#ffffff", 0.36);
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(p.x + 8, p.y + 8);
+  ctx.lineTo(p.x + p.w - 8, p.y + 8);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawPlatformScribbles(p) {
@@ -1667,8 +1830,8 @@ function drawSpikeStrip(h) {
   const step = spikeRect.w / count;
   ctx.save();
   if (h.popup) drawPopupSpikeWarning(h, pop);
-  ctx.fillStyle = colors.ink;
-  ctx.strokeStyle = colors.ink;
+  ctx.fillStyle = h.color || (SPACE_LEVEL ? "#e2e8f0" : colors.ink);
+  ctx.strokeStyle = h.color || (SPACE_LEVEL ? "#050816" : colors.ink);
   ctx.globalAlpha = h.popup ? 0.46 + pop * 0.54 : 1;
   ctx.beginPath();
   for (let i = 0; i < count; i++) {
@@ -2164,7 +2327,7 @@ function seesFloorSpikeAhead() {
   if (!player.onGround) return false;
   const front = player.x + player.w;
   const bottom = player.y + player.h;
-  const lookAhead = player.mini
+  const defaultLookAhead = player.mini
     ? 156
     : state.currentSection?.id === "start"
       ? 105
@@ -2173,6 +2336,7 @@ function seesFloorSpikeAhead() {
         : state.currentSection?.id === "trap"
           ? 80
           : 160;
+  const lookAhead = level.testLookAhead ?? defaultLookAhead;
   return level.hazards.some((h) => {
     const ahead = h.x >= front - 8 && h.x <= front + lookAhead;
     if (!ahead) return false;
@@ -2184,9 +2348,10 @@ function seesFloorSpikeAhead() {
 function seesMoverAhead() {
   if (!player.onGround) return false;
   const front = player.x + player.w;
+  const lookAhead = level.testMoverLookAhead ?? 170;
   return level.movers.some((m) => {
     const r = movingRect(m);
-    const ahead = r.x >= front - 10 && r.x <= front + 170;
+    const ahead = r.x >= front - 10 && r.x <= front + lookAhead;
     const sameLane = r.y + r.h >= player.y - 40 && r.y <= player.y + player.h + 120;
     return ahead && sameLane;
   });
@@ -2393,6 +2558,19 @@ function hexToRgb(hex) {
 }
 
 window.__FIL_DASH_DEBUG__ = debugSnapshot;
+
+if (SPACE_LEVEL && space3dCanvas) {
+  gameShell.classList.add("space3d-active");
+  startSpace3dLayer(space3dCanvas, () => ({
+    time: state.time,
+    progress: levelProgress(),
+    speed: player.vx,
+    running: state.running && !state.paused && player.deadTimer <= 0,
+    accent: state.currentSection?.accent || colors.cyan,
+  })).catch(() => {
+    space3dCanvas.dataset.failed = "true";
+  });
+}
 
 resize();
 initTelegram();

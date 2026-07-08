@@ -36,10 +36,33 @@ body {
 }
 
 #game {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
   background: #f7f1e6;
+}
+
+.space3d-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #050716;
+  opacity: 0;
+  transition: opacity 240ms ease;
+}
+
+.space3d-active .space3d-layer {
+  opacity: 1;
+}
+
+.space3d-active #game {
+  background: transparent;
 }
 
 body.force-landscape .game-shell {
