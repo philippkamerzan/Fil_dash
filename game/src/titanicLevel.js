@@ -617,14 +617,24 @@ function buildCompleteTitanicMap() {
   level.hazards.push(
     ceilingSpike(5120, 800, scaleW(1540), 34, { color: "#dbeafe" }),
     floorSpike(5120, 1238, scaleW(1540), 38, { scaleWidth: true, color: "#dbeafe" }),
+    ceilingSpike(5280, 840, 92, 30, { color: "#bfdbfe", popup: popup({ hiddenOffset: 22, triggerDistance: 230 }) }),
+    floorSpike(5365, 1088, 78, 34, { color: "#dbeafe" }),
     ceilingSpike(5480, 900, 110, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#bfdbfe", fallDistance: 160, triggerDistance: 530 }) }),
+    floorSpike(5605, 1122, 70, 34, { popup: popup({ triggerDistance: 230 }), color: "#bfdbfe" }),
     floorSpike(5740, 1130, 96, 36, { color: "#bfdbfe" }),
+    ceilingSpike(5820, 945, 90, 30, { color: "#e0f2fe" }),
+    floorSpike(5960, 1150, 70, 34, { color: "#bfdbfe" }),
     ceilingSpike(6090, 885, 128, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#60a5fa", fallDistance: 170, triggerDistance: 545, armDistance: 250 }) }),
+    ceilingSpike(6240, 960, 76, 28, { color: "#dbeafe", popup: popup({ hiddenOffset: 22, triggerDistance: 225 }) }),
     floorSpike(6380, 1144, 92, 36, { popup: popup({ triggerDistance: 245 }), color: "#bfdbfe" }),
+    ceilingSpike(6535, 970, 86, 30, { color: "#bfdbfe" }),
   );
   level.movers.push(
     mover(5900, 960, 50, 60, "y", 66, 2.35, 1.2, "#38bdf8"),
     mover(6320, 915, 54, 58, "y", 58, 2.55, 2.4, "#fbbf24"),
+    mover(5520, 850, 46, 52, "y", 34, 2.7, 0.6, "#60a5fa"),
+    mover(6040, 1115, 48, 52, "y", 30, 2.9, 2.2, "#fbbf24"),
+    mover(6505, 985, 44, 50, "x", 58, 2.75, 1.4, "#38bdf8"),
   );
 
   level.orbs.push(
@@ -638,12 +648,30 @@ function buildCompleteTitanicMap() {
     trigger(6880, 1000, 90, 132, "fast", { speed: 518 }),
     trigger(12850, 990, 90, 132, "fast", { speed: 536 }),
   );
+  level.hazards.push(
+    ceilingSpike(7040, 915, 94, 30, { color: "#dbeafe", falling: falling({ warningColor: "#7dd3fc", fallDistance: 145, triggerDistance: 500 }) }),
+    ceilingSpike(7355, 900, 86, 28, { popup: popup({ hiddenOffset: 22, triggerDistance: 225 }), color: "#bfdbfe" }),
+    ceilingSpike(7740, 815, 96, 30, { color: "#dbeafe" }),
+    floorSpike(7945, 1076, 58, 34, { color: "#dbeafe" }),
+    ceilingSpike(8245, 925, 94, 30, { popup: popup({ hiddenOffset: 24, triggerDistance: 225 }), color: "#bfdbfe" }),
+    ceilingSpike(8585, 940, 92, 28, { popup: popup({ hiddenOffset: 22, triggerDistance: 225 }), color: "#bfdbfe" }),
+    ceilingSpike(8820, 815, 86, 28, { color: "#dbeafe", falling: falling({ warningColor: "#60a5fa", fallDistance: 150, triggerDistance: 500 }) }),
+  );
   level.movers.push(
     mover(4820, 820, 52, 60, "y", 42, 2.3, 0.5, "#94a3b8"),
+    mover(7140, 865, 48, 58, "y", 36, 2.55, 0.8, "#7dd3fc"),
+    mover(7790, 845, 50, 58, "x", 70, 2.65, 1.9, "#fbbf24"),
     mover(8500, 805, 50, 58, "x", 82, 2.5, 1.4, "#38bdf8"),
+    mover(8830, 955, 48, 56, "y", 42, 2.8, 2.6, "#60a5fa"),
     mover(12280, 830, 52, 60, "y", 40, 2.55, 2.1, "#fbbf24"),
   );
-  level.testActions.push(jump(4720, 180), jump(8380, 186), jump(12180, 178), jump(13060, 240));
+  level.testActions.push(
+    jump(4720, 180),
+    jump(7905, 160),
+    jump(8380, 186),
+    jump(12180, 178),
+    jump(13060, 240),
+  );
 
   level.platforms.push(
     platform(9000, 620, 1120),
