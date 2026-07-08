@@ -289,7 +289,7 @@ portals.push(trigger(8110, 806, 104, 160, "gravityFlip", {
 addPlatform(8240, 500, 470, 42);
 addPlatform(8720, 500, 460, 42);
 addPlatform(9220, 500, 780, 42);
-addPopupSpike(9260, 542, 52, 24, "down", { popup: { triggerDistance: 300, extendDistance: 140 } });
+addSpike(9260, 542, 52, 24, "down");
 addPopupSpike(9580, 542, 56, 24, "down", { popup: { triggerDistance: 300, extendDistance: 140 } });
 addPopupSpike(9860, 542, 52, 24, "down", { popup: { triggerDistance: 300, extendDistance: 140 } });
 addSpike(8740, 362, 96, 24, "up");
