@@ -299,7 +299,7 @@ level.routeBands = [
 ];
 
 const jungleDecor = [];
-for (let x = 80, i = 0; x < baseLevel.baseWidth; x += 68, i++) {
+for (let x = 80, i = 0; x < baseLevel.baseWidth; x += 96, i++) {
   const accent = sectionSkins[i % sectionSkins.length][2];
   const canopyY = 90 + ((i * 61) % 470);
   const lowerY = 1030 + ((i * 83) % 430);
@@ -555,16 +555,17 @@ function buildCompleteJungleMap() {
   }
 
   const floorHazards = [
-    [320, 1190, 34, false], [640, 1190, 32, true], [820, 1190, 28, true], [980, 1190, 34, false],
-    [1380, 1118, 32, true], [1720, 1118, 72, false], [2140, 1118, 30, true],
-    [2720, 1190, 34, false], [3185, 1190, 34, true], [3580, 1190, 80, false],
-    [4020, 1190, 32, true], [4520, 1130, 34, false], [5120, 1130, 34, true],
+    [320, 1190, 34, false], [470, 1190, 28, true], [640, 1190, 32, true], [820, 1190, 28, true], [980, 1190, 34, false],
+    [1145, 1190, 28, true], [1380, 1118, 32, true], [1545, 1118, 30, true], [1720, 1118, 72, false], [2140, 1118, 30, true],
+    [2720, 1190, 34, false], [2935, 1190, 30, true], [3185, 1190, 34, true], [3580, 1190, 80, false],
+    [3840, 1190, 28, true], [4020, 1190, 32, true], [4520, 1130, 34, false], [4860, 1130, 30, true], [5120, 1130, 34, true],
     [5750, 1210, 34, false], [6310, 1210, 74, false], [6660, 1210, 32, true],
-    [6960, 1090, 28, true], [7100, 1090, 34, true], [7490, 1090, 32, false], [8130, 1090, 34, true],
-    [8750, 1180, 34, false], [9340, 1180, 34, true], [10150, 1060, 32, false],
-    [10570, 1060, 78, false], [11100, 1060, 30, true], [11680, 1160, 34, false],
-    [12320, 1160, 34, true], [12980, 1080, 28, true], [13145, 1080, 32, false], [13450, 1080, 34, true],
-    [13940, 1080, 74, false], [14720, 1190, 34, true],
+    [6960, 1090, 28, true], [7100, 1090, 34, true], [7490, 1090, 32, false], [7825, 1090, 30, true], [8130, 1090, 34, true],
+    [8460, 1180, 30, true], [8750, 1180, 34, false], [9030, 1180, 30, true], [9340, 1180, 34, true], [9720, 1180, 30, true],
+    [10150, 1060, 32, false], [10570, 1060, 78, false], [10850, 1060, 30, true], [11100, 1060, 30, true],
+    [11380, 1160, 30, true], [11680, 1160, 34, false], [11980, 1160, 30, true], [12320, 1160, 34, true],
+    [12620, 1160, 30, true], [12980, 1080, 28, true], [13145, 1080, 32, false], [13450, 1080, 34, true],
+    [13640, 1080, 30, true], [13940, 1080, 74, false], [14280, 1080, 30, true], [14720, 1190, 34, true],
   ];
   for (const [x, platformY, w, hidden] of floorHazards) {
     level.hazards.push(floorSpike(x, platformY - 34, w, 34, hidden ? { popup: popup({ triggerDistance: 235 }) } : {}));
@@ -584,7 +585,7 @@ function buildCompleteJungleMap() {
     [6480, { y: 1010, h: 30, warningColor: "#06b6d4", fallDistance: 195 }],
     [9240, { y: 1000, h: 30, warningColor: "#a855f7" }],
     [11860, { y: 976, h: 30, warningColor: "#38bdf8", triggerDistance: 545 }],
-    [14220, { y: 1020, h: 30, warningColor: "#4ade80" }],
+    [14220, { y: 840, h: 28, fallDistance: 54, warningColor: "#4ade80" }],
   ]);
   for (const [x, y, w] of ceilingHazards) {
     const fallingSpec = fallingCeilingHazards.get(x);
@@ -602,11 +603,11 @@ function buildCompleteJungleMap() {
     1550, 1930, 2500, 2930, 4700, 5495, 5937, 6123, 7715, 8340,
     8995, 9610, 9880, 10835, 11293, 11487, 12480, 13695, 14470, 14930,
   ];
-  const fallingDensityCeilings = new Set([2500, 8995, 12480]);
+  const fallingDensityCeilings = new Set([1550, 2500, 4700, 6123, 8995, 11293, 12480, 13695, 14930]);
   densityCeilings.forEach((x, index) => {
-    const y = index % 3 === 0 ? 680 : index % 3 === 1 ? 730 : 775;
+    const y = index % 3 === 0 ? 790 : index % 3 === 1 ? 840 : 885;
     const extra = fallingDensityCeilings.has(x)
-      ? { falling: falling({ fallDistance: 150, triggerDistance: 500, armDistance: 238, warningColor: "#22c55e" }) }
+      ? { falling: falling({ fallDistance: 118, triggerDistance: 470, armDistance: 225, warningColor: "#22c55e" }) }
       : {};
     level.hazards.push(ceilingSpike(x, y, index % 2 ? 60 : 74, 24, extra));
   });

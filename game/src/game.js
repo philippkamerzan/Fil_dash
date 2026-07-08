@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=74";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=75";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -72,7 +72,7 @@ const FORCE_LOW_DETAIL = RENDER_QUALITY_SETTING === "low" || RENDER_QUALITY_SETT
 const FORCE_HIGH_DETAIL = RENDER_QUALITY_SETTING === "high" || RENDER_QUALITY_SETTING === "full";
 const TELEGRAM_CHROME_SAFE = detectTelegramRuntime() || queryFlag("telegramChrome") || queryFlag("tgChromeSafe");
 const SPACE_PERF_MODE = SPACE_LEVEL && !TEST_RUN && SPACE_3D_SETTING !== "high" && (TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT || SPACE_3D_SETTING === "low");
-const JUNGLE_PERF_MODE = JUNGLE_LEVEL && !FORCE_HIGH_DETAIL && (FORCE_LOW_DETAIL || TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT);
+const JUNGLE_PERF_MODE = JUNGLE_LEVEL && !FORCE_HIGH_DETAIL;
 const TITANIC_PERF_MODE = TITANIC_LEVEL && !FORCE_HIGH_DETAIL && (FORCE_LOW_DETAIL || TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT);
 const ROUTE_PERF_MODE = SPACE_PERF_MODE || JUNGLE_PERF_MODE || TITANIC_PERF_MODE;
 const SPACE_3D_DISABLED = SPACE_LEVEL && (SPACE_3D_SETTING === "off" || SPACE_3D_SETTING === "0");
@@ -84,14 +84,14 @@ const SPACE_RAY_SPAN = SPACE_PERF_MODE ? 4 : 7;
 const SPEED_STREAK_COUNT = ROUTE_PERF_MODE ? 14 : 30;
 const ROUTE_TUNNEL_DEPTH = ROUTE_PERF_MODE ? 6 : 11;
 const ROUTE_TUNNEL_ARROWS = ROUTE_PERF_MODE ? 3 : 6;
-const JUNGLE_CANOPY_COUNT = JUNGLE_PERF_MODE ? 24 : 44;
-const JUNGLE_VINE_COUNT = JUNGLE_PERF_MODE ? 13 : 26;
-const JUNGLE_PARTICLE_COUNT = JUNGLE_PERF_MODE ? 32 : 70;
-const JUNGLE_DEPTH_LEAF_COUNT = JUNGLE_PERF_MODE ? 10 : 22;
+const JUNGLE_CANOPY_COUNT = JUNGLE_PERF_MODE ? 16 : 44;
+const JUNGLE_VINE_COUNT = JUNGLE_PERF_MODE ? 8 : 26;
+const JUNGLE_PARTICLE_COUNT = JUNGLE_PERF_MODE ? 20 : 70;
+const JUNGLE_DEPTH_LEAF_COUNT = JUNGLE_PERF_MODE ? 6 : 22;
 const TITANIC_WINDOW_COUNT = TITANIC_PERF_MODE ? 14 : 30;
 const TITANIC_ICE_COUNT = TITANIC_PERF_MODE ? 7 : 16;
 const TITANIC_LANDMARK_COUNT = TITANIC_PERF_MODE ? 4 : 7;
-const JUNGLE_DECOR_MARGIN = JUNGLE_PERF_MODE ? 70 : 120;
+const JUNGLE_DECOR_MARGIN = JUNGLE_PERF_MODE ? 48 : 120;
 const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
 const PLAYER_SPAWN_SIZE = 34;
 
@@ -2395,7 +2395,8 @@ function drawJungleStageDepth(section, baseX, baseY, beat) {
   ctx.strokeStyle = "rgba(253, 186, 116, 0.42)";
   ctx.lineWidth = 34;
   ctx.lineCap = "round";
-  for (let i = 0; i < 4; i++) {
+  const rayCount = JUNGLE_PERF_MODE ? 2 : 4;
+  for (let i = 0; i < rayCount; i++) {
     const x = (baseX * 0.7 + i * 280) % (viewW + 340) - 140;
     ctx.beginPath();
     ctx.moveTo(x, -70);
@@ -2407,7 +2408,8 @@ function drawJungleStageDepth(section, baseX, baseY, beat) {
   ctx.strokeStyle = mixHex(section.accent, "#064e3b", 0.28);
   ctx.lineWidth = 2.4;
   const horizon = viewH * 0.24 + (baseY % 24);
-  for (let i = -6; i <= 6; i++) {
+  const gridSpan = JUNGLE_PERF_MODE ? 3 : 6;
+  for (let i = -gridSpan; i <= gridSpan; i++) {
     ctx.beginPath();
     ctx.moveTo(viewW / 2 + i * 42, horizon);
     ctx.bezierCurveTo(
@@ -2422,7 +2424,8 @@ function drawJungleStageDepth(section, baseX, baseY, beat) {
   }
 
   ctx.globalAlpha = 0.18;
-  for (let i = 0; i < 8; i++) {
+  const waterlineCount = JUNGLE_PERF_MODE ? 4 : 8;
+  for (let i = 0; i < waterlineCount; i++) {
     const y = horizon + i * i * 8 + ((baseY * 1.6) % 70);
     ctx.strokeStyle = i % 2 ? "#16a34a" : "#84cc16";
     ctx.beginPath();
@@ -2453,7 +2456,8 @@ function drawJungleStageDepth(section, baseX, baseY, beat) {
   }
 
   ctx.globalAlpha = 0.24;
-  for (let i = 0; i < 18; i++) {
+  const fireflyCount = JUNGLE_PERF_MODE ? 9 : 18;
+  for (let i = 0; i < fireflyCount; i++) {
     const x = (baseX * 3.1 + i * 117) % (viewW + 180) - 70;
     const y = viewH * 0.2 + ((baseY + i * 49) % (viewH * 0.66));
     ctx.fillStyle = i % 3 === 0 ? "#f472b6" : i % 3 === 1 ? "#facc15" : "#2dd4bf";
