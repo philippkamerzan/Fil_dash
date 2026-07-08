@@ -334,6 +334,7 @@ const state = {
   globalLeaderboard: [],
   globalLeaderboardReady: false,
   portalTransition: null,
+  checkpointIndex: -1,
 };
 
 const player = {
@@ -587,6 +588,20 @@ function checkpointHref(checkpoint) {
   return `${window.location.pathname}${query ? `?${query}` : ""}`;
 }
 
+function savedCheckpointId() {
+  return state.checkpoint?.checkpointId || ACTIVE_TEST_CHECKPOINT?.id || "";
+}
+
+function updateCheckpointPickerActive() {
+  if (!TEST_MODE || !checkpointPickerEl) return;
+  const activeId = savedCheckpointId();
+  checkpointPickerEl.querySelectorAll(".checkpoint-choice").forEach((button) => {
+    const active = button.dataset.checkpointId === activeId;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
 function setupLevelPicker() {
   if (!levelPickerEl) return;
   levelPickerEl.replaceChildren();
@@ -626,8 +641,6 @@ function setupCheckpointPicker() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "checkpoint-choice";
-    button.classList.toggle("active", checkpoint.id === ACTIVE_TEST_CHECKPOINT?.id);
-    button.setAttribute("aria-pressed", String(checkpoint.id === ACTIVE_TEST_CHECKPOINT?.id));
     button.dataset.checkpointId = checkpoint.id;
 
     const code = document.createElement("b");
@@ -637,7 +650,7 @@ function setupCheckpointPicker() {
     button.append(code, name);
 
     button.addEventListener("click", () => {
-      if (checkpoint.id === ACTIVE_TEST_CHECKPOINT?.id) {
+      if (checkpoint.id === savedCheckpointId()) {
         restartFromCheckpoint(false);
         startGame();
         return;
@@ -646,6 +659,7 @@ function setupCheckpointPicker() {
     });
     checkpointPickerEl.append(button);
   }
+  updateCheckpointPickerActive();
 }
 
 function playerId() {
@@ -930,6 +944,24 @@ function usesCheckpointSpawn() {
   return TEST_MODE || (TEST_RUN && !!ACTIVE_TEST_CHECKPOINT);
 }
 
+function saveTestCheckpoint(checkpoint) {
+  if (!checkpoint?.spawn) return false;
+  state.checkpoint = structuredClone(checkpoint.spawn);
+  state.checkpointIndex = checkpoint.index;
+  updateCheckpointPickerActive();
+  return true;
+}
+
+function syncTestCheckpointToProgress() {
+  if (!TEST_MODE || player.deadTimer > 0 || state.finished) return;
+  for (let i = state.checkpointIndex + 1; i < TEST_CHECKPOINTS.length; i += 1) {
+    const checkpoint = TEST_CHECKPOINTS[i];
+    if (!checkpoint?.spawn) continue;
+    if (player.x + player.w < checkpoint.spawn.x) break;
+    saveTestCheckpoint(checkpoint);
+  }
+}
+
 function restartFromCheckpoint(countAttempt = true) {
   const spawn = structuredClone(usesCheckpointSpawn() ? state.checkpoint : WORLD.start);
   player.x = spawn.x;
@@ -1002,7 +1034,12 @@ function finish() {
   overlay.classList.remove("hidden");
   overlayTitle.textContent = "Финиш";
   startButton.textContent = "Еще раз";
-  state.checkpoint = structuredClone(usesCheckpointSpawn() ? ACTIVE_TEST_CHECKPOINT?.spawn || WORLD.start : WORLD.start);
+  if (TEST_MODE) updateCheckpointPickerActive();
+  else if (usesCheckpointSpawn() && ACTIVE_TEST_CHECKPOINT) saveTestCheckpoint(ACTIVE_TEST_CHECKPOINT);
+  else {
+    state.checkpoint = structuredClone(WORLD.start);
+    state.checkpointIndex = -1;
+  }
 }
 
 function ensureAudio() {
@@ -1180,6 +1217,7 @@ function update(dt) {
   if (player.mode === "plane") updatePlane(dt);
   else updateCube(dt);
   updateCommonInteractions(dt);
+  syncTestCheckpointToProgress();
   updateCamera(dt);
   updateHud();
 }
@@ -3383,7 +3421,11 @@ function requestBrowserLandscapeLock() {
 
 function applyInitialCheckpoint() {
   if (!usesCheckpointSpawn()) return;
-  state.checkpoint = structuredClone(ACTIVE_TEST_CHECKPOINT?.spawn || WORLD.start);
+  if (ACTIVE_TEST_CHECKPOINT) saveTestCheckpoint(ACTIVE_TEST_CHECKPOINT);
+  else {
+    state.checkpoint = structuredClone(WORLD.start);
+    state.checkpointIndex = -1;
+  }
 }
 
 function debugSnapshot() {
@@ -3478,6 +3520,9 @@ function debugSnapshot() {
       enabled: TEST_MODE,
       checkpointId: ACTIVE_TEST_CHECKPOINT?.id || "",
       checkpointName: ACTIVE_TEST_CHECKPOINT?.name || "",
+      savedCheckpointIndex: state.checkpointIndex,
+      savedCheckpointId: state.checkpoint.checkpointId || "",
+      savedCheckpointName: state.checkpoint.checkpointName || "",
       checkpointCount: TEST_CHECKPOINTS.length,
     },
     economy: {
