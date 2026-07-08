@@ -265,7 +265,7 @@ addSpike(3250, 1066, 990, 54, "up", { scaleWidth: true });
 addHold(3160, 1250);
 addPlatform(4380, 1120, 370);
 trampolines.push(trigger(4460, 1088, 88, 30, "trampoline", { vx: 380, vy: -640 }));
-boosters.push(trigger(4670, 790, 120, 420, "portalDown", {
+boosters.push(trigger(4670, 700, 170, 560, "portalDown", {
   target: { x: 5120, y: 1060, mode: "plane", gravity: 1 },
 }));
 
@@ -510,11 +510,11 @@ for (const marker of unreachableBaseSpikes) {
 const densityCeilingSpikes = [
   { x: 1085, y: 875, w: 74, shelf: true },
   { x: 1540, y: 958, w: 86, shelf: true, falling: falling({ warningColor: "#22c7d7" }) },
-  { x: 3482, y: 850, w: 82, shelf: true },
-  { x: 3714, y: 815, w: 64, mover: true },
-  { x: 3946, y: 860, w: 76, shelf: true },
-  { x: 4178, y: 820, w: 64, mover: true },
-  { x: 4885, y: 825, w: 82, shelf: true },
+  { x: 3482, y: 690, w: 82, shelf: true },
+  { x: 3714, y: 680, w: 64, mover: true },
+  { x: 3946, y: 700, w: 76, shelf: true },
+  { x: 4178, y: 685, w: 64, mover: true },
+  { x: 4885, y: 700, w: 82, shelf: true },
   { x: 5335, y: 840, w: 68, mover: true },
   { x: 5570, y: 870, w: 76, shelf: true },
   { x: 6198, y: 825, w: 74, mover: true },
