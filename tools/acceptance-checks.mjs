@@ -8,6 +8,7 @@ const { levels } = await import(`../game/src/levels.js?acceptance=${Date.now()}`
 
 const GAMEPLAY_MAX_GAP_SECONDS = 1.2;
 const NEW_LEVEL_MAX_GAP_SECONDS = 1.1;
+const MAX_INPUT_IDLE_SECONDS = 2.5;
 const HITBOX_MAX_ABS_DELTA = 6;
 const HITBOX_MAX_REL_DELTA = 0.08;
 const MOBILE_VIEWPORTS = [
@@ -23,6 +24,7 @@ const checks = [
   planeModeStageAudit(),
   stageVarietyAudit(),
   densityAudit(),
+  inputActionGapAudit(),
   hitboxAudit(),
   mobileSafeZoneAudit(),
   inputTimingAudit(),
@@ -219,6 +221,34 @@ function densityAudit() {
     name: "density audit",
     ok: results.every((result) => result.ok),
     results,
+  };
+}
+
+function inputActionGapAudit() {
+  const report = runJsonTool("playtest-levels.mjs", [
+    "--levels=1,2,3,4",
+    "--variants=perfect,early,late",
+    "--maxSeconds=220",
+    "--reportInputGaps=1",
+    `--inputGapLimitSeconds=${MAX_INPUT_IDLE_SECONDS}`,
+  ]);
+  const failed = report.results.filter((result) =>
+    !result.ok || (result.inputIdle?.badCount || 0) > 0
+  );
+  return {
+    name: "input action gap audit",
+    ok: report.ok && failed.length === 0,
+    limitSeconds: MAX_INPUT_IDLE_SECONDS,
+    attempts: report.results.length,
+    failed: failed.map((result) => ({
+      level: result.level,
+      variant: result.variant,
+      ok: result.ok,
+      lastDeath: result.lastDeath,
+      badCount: result.inputIdle?.badCount || 0,
+      maxSeconds: result.inputIdle?.maxSeconds || 0,
+      gaps: result.inputIdle?.gaps || [],
+    })),
   };
 }
 

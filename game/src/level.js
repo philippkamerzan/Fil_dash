@@ -366,18 +366,22 @@ autoPads.push(trigger(12110, 1084, 82, 32, "autoPad", { power: 720, vx: 338 }));
 addSpike(10870, 866, 34, 34, "up");
 addPopupSpike(11085, 866, 34, 34, "up", { popup: { triggerDistance: 300, extendDistance: 130 } });
 addSpike(11320, 1086, 42, 34, "up");
+addPopupSpike(11480, 1086, 30, 34, "up", { popup: { triggerDistance: 250, extendDistance: 120 } });
 addSpike(11695, 1086, 34, 34, "up");
 addSpike(11900, 866, 170, 34, "up");
 addSpike(12150, 866, 34, 34, "up");
 addJump(10820);
 addJump(10940);
 addJump(11250);
+addJump(11378, 160);
 addJump(11510);
+addHold(11610, 120);
 addJump(11645);
 addJump(11820);
+addHold(12100, 140);
 addJump(12100);
 movers.push({ x: 11760, y: 790, w: 52, h: 60, axis: "y", amp: 62, speed: 1.7, phase: 1.5, kind: "movingHazard" });
-movers.push({ x: 11420, y: 940, w: 46, h: 56, axis: "x", amp: 72, speed: 1.95, phase: 0.4, kind: "movingHazard" });
+movers.push({ x: 11420, y: 870, w: 46, h: 56, axis: "x", amp: 72, speed: 1.95, phase: 0.4, kind: "movingHazard" });
 
 // Section 12: mini mode and dense short jumps.
 addPlatform(12200, 980, 360, 44);

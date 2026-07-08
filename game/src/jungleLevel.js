@@ -557,7 +557,7 @@ function buildCompleteJungleMap() {
   const floorHazards = [
     [320, 1190, 34, false], [470, 1190, 28, true], [640, 1190, 32, true], [820, 1190, 28, true], [980, 1190, 34, false],
     [1145, 1190, 28, true], [1380, 1118, 32, true], [1545, 1118, 30, true], [1720, 1118, 72, false], [2140, 1118, 30, true],
-    [2720, 1190, 34, false], [2935, 1190, 30, true], [3185, 1190, 34, true], [3580, 1190, 80, false],
+    [2520, 1190, 30, true], [2720, 1190, 34, false], [2935, 1190, 30, true], [3185, 1190, 34, true], [3580, 1190, 80, false],
     [3840, 1190, 28, true], [4020, 1190, 32, true], [4520, 1130, 34, false], [4860, 1130, 30, true], [5120, 1130, 34, true],
     [5750, 1210, 34, false], [6310, 1210, 74, false], [6660, 1210, 32, true],
     [6960, 1090, 28, true], [7100, 1090, 34, true], [7490, 1090, 32, false], [7825, 1090, 30, true], [8130, 1090, 34, true],
@@ -565,7 +565,7 @@ function buildCompleteJungleMap() {
     [10150, 1060, 32, false], [10570, 1060, 78, false], [10850, 1060, 30, true], [11100, 1060, 30, true],
     [11380, 1160, 30, true], [11680, 1160, 34, false], [11980, 1160, 30, true], [12320, 1160, 34, true],
     [12620, 1160, 30, true], [12980, 1080, 28, true], [13145, 1080, 32, false], [13450, 1080, 34, true],
-    [13640, 1080, 30, true], [13940, 1080, 74, false], [14280, 1080, 30, true], [14720, 1190, 34, true],
+    [13640, 1080, 30, true], [13940, 1080, 74, false], [14280, 1080, 30, true], [14720, 1190, 34, true], [15010, 1190, 30, true],
   ];
   for (const [x, platformY, w, hidden] of floorHazards) {
     level.hazards.push(floorSpike(x, platformY - 34, w, 34, hidden ? { popup: popup({ triggerDistance: 235 }) } : {}));

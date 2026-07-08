@@ -1,7 +1,7 @@
-import { level as level1 } from "./level.js?v=83";
-import { level as level2 } from "./spaceLevel.js?v=13";
-import { level as level3 } from "./jungleLevel.js?v=52";
-import { level as level4 } from "./titanicLevel.js?v=64";
+import { level as level1 } from "./level.js?v=84";
+import { level as level2 } from "./spaceLevel.js?v=14";
+import { level as level3 } from "./jungleLevel.js?v=53";
+import { level as level4 } from "./titanicLevel.js?v=65";
 
 export const levels = [
   level1,

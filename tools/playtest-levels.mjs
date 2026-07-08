@@ -15,6 +15,8 @@ const requestedVariants = String(args.variants || "perfect,early,late")
   .filter(Boolean);
 const maxSeconds = Number(args.maxSeconds || 180);
 const dt = Number(args.dt || 0.02);
+const reportInputGaps = args.reportInputGaps === "1" || args.reportInputGaps === "true";
+const inputGapLimitSeconds = Number(args.inputGapLimitSeconds || 2.5);
 
 const MOUTH_CLOSE_SECONDS = 0.24;
 const MOUTH_TOOTH_HIT_H = 6;
@@ -43,6 +45,15 @@ function runLevel(level, variant) {
   const variantShiftSeconds = variant === "early" ? -0.08 : variant === "late" ? 0.08 : 0;
   const keys = { jump: false };
   const inputState = { pressStartedAt: null };
+  const idleTracker = {
+    wasPressed: false,
+    idleStartTime: 0,
+    idleStartX: level.world.start.x,
+    idleStartY: level.world.start.y,
+    idleStartSection: level.sections[0]?.id || "",
+    idleStartMode: level.world.start.mode || "cube",
+    gaps: [],
+  };
   const state = {
     time: 0,
     finished: false,
@@ -76,7 +87,9 @@ function runLevel(level, variant) {
     update(dt);
   }
 
-  return {
+  closeTrailingIdle();
+
+  const result = {
     level: level.number,
     id: level.id,
     variant,
@@ -98,9 +111,14 @@ function runLevel(level, variant) {
       mini: player.mini,
     },
   };
+  if (reportInputGaps) {
+    result.inputIdle = inputIdleSummary();
+  }
+  return result;
 
   function update(step) {
     applyTestRunInput();
+    trackInputIdle();
     state.time += step;
     player.portalCooldown = Math.max(0, player.portalCooldown - step);
     player.orbCooldown = Math.max(0, player.orbCooldown - step);
@@ -116,6 +134,70 @@ function runLevel(level, variant) {
     if (player.mode === "plane") updatePlane(step);
     else updateCube(step);
     updateCommonInteractions();
+  }
+
+  function trackInputIdle() {
+    if (keys.jump) {
+      if (!idleTracker.wasPressed) {
+        closeIdleAt(state.time, player.x);
+        idleTracker.wasPressed = true;
+      }
+      return;
+    }
+    if (idleTracker.wasPressed) {
+      idleTracker.wasPressed = false;
+      idleTracker.idleStartTime = state.time;
+      idleTracker.idleStartX = player.x;
+      idleTracker.idleStartY = player.y;
+      idleTracker.idleStartSection = activeSection()?.id || "";
+      idleTracker.idleStartMode = player.mode;
+    }
+  }
+
+  function closeTrailingIdle() {
+    if (!idleTracker.wasPressed) closeIdleAt(state.time, player.x);
+  }
+
+  function closeIdleAt(endTime, endX) {
+    const seconds = endTime - idleTracker.idleStartTime;
+    if (seconds <= 0.001) return;
+    idleTracker.gaps.push({
+      seconds,
+      startTime: idleTracker.idleStartTime,
+      endTime,
+      startX: idleTracker.idleStartX,
+      endX,
+      startY: idleTracker.idleStartY,
+      endY: player.y,
+      section: idleTracker.idleStartSection,
+      mode: idleTracker.idleStartMode,
+    });
+  }
+
+  function inputIdleSummary() {
+    const scale = level.scale || 1;
+    const gaps = idleTracker.gaps
+      .filter((gap) => gap.seconds > inputGapLimitSeconds)
+      .sort((a, b) => b.seconds - a.seconds)
+      .map((gap) => ({
+        seconds: Math.round(gap.seconds * 100) / 100,
+        startTime: Math.round(gap.startTime * 100) / 100,
+        endTime: Math.round(gap.endTime * 100) / 100,
+        startX: Math.round(gap.startX),
+        endX: Math.round(gap.endX),
+        startY: Math.round(gap.startY),
+        endY: Math.round(gap.endY),
+        sourceStartX: Math.round(gap.startX / scale),
+        sourceEndX: Math.round(gap.endX / scale),
+        section: gap.section,
+        mode: gap.mode,
+      }));
+    return {
+      limitSeconds: inputGapLimitSeconds,
+      badCount: gaps.length,
+      maxSeconds: gaps[0]?.seconds || 0,
+      gaps,
+    };
   }
 
   function targetSpeed() {
