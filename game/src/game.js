@@ -67,9 +67,10 @@ const FORCE_HIGH_DETAIL = RENDER_QUALITY_SETTING === "high" || RENDER_QUALITY_SE
 const TELEGRAM_CHROME_SAFE = detectTelegramRuntime() || queryFlag("telegramChrome") || queryFlag("tgChromeSafe");
 const SPACE_PERF_MODE = SPACE_LEVEL && !TEST_RUN && SPACE_3D_SETTING !== "high" && (TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT || SPACE_3D_SETTING === "low");
 const JUNGLE_PERF_MODE = JUNGLE_LEVEL && !FORCE_HIGH_DETAIL && (FORCE_LOW_DETAIL || TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT);
-const ROUTE_PERF_MODE = SPACE_PERF_MODE || JUNGLE_PERF_MODE;
+const TITANIC_PERF_MODE = TITANIC_LEVEL && !FORCE_HIGH_DETAIL && (FORCE_LOW_DETAIL || TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT);
+const ROUTE_PERF_MODE = SPACE_PERF_MODE || JUNGLE_PERF_MODE || TITANIC_PERF_MODE;
 const SPACE_3D_DISABLED = SPACE_LEVEL && (SPACE_3D_SETTING === "off" || SPACE_3D_SETTING === "0");
-const MAX_CANVAS_DPR = SPACE_PERF_MODE ? 1.15 : JUNGLE_PERF_MODE ? 1.25 : 2;
+const MAX_CANVAS_DPR = SPACE_PERF_MODE ? 1.15 : JUNGLE_PERF_MODE || TITANIC_PERF_MODE ? 1.25 : 2;
 const DEBUG_DATASET_INTERVAL_MS = TEST_RUN ? 0 : 180;
 const SPACE_STAR_COUNT = SPACE_PERF_MODE ? 62 : 140;
 const SPACE_GRID_ROWS = SPACE_PERF_MODE ? 10 : 18;
@@ -80,6 +81,9 @@ const ROUTE_TUNNEL_ARROWS = ROUTE_PERF_MODE ? 3 : 6;
 const JUNGLE_CANOPY_COUNT = JUNGLE_PERF_MODE ? 24 : 44;
 const JUNGLE_VINE_COUNT = JUNGLE_PERF_MODE ? 13 : 26;
 const JUNGLE_PARTICLE_COUNT = JUNGLE_PERF_MODE ? 32 : 70;
+const JUNGLE_DEPTH_LEAF_COUNT = JUNGLE_PERF_MODE ? 10 : 22;
+const TITANIC_WINDOW_COUNT = TITANIC_PERF_MODE ? 14 : 30;
+const TITANIC_ICE_COUNT = TITANIC_PERF_MODE ? 7 : 16;
 const JUNGLE_DECOR_MARGIN = JUNGLE_PERF_MODE ? 70 : 120;
 const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
 const PLAYER_SPAWN_SIZE = 34;
@@ -1766,6 +1770,7 @@ function drawBackground() {
     ctx.fillStyle = y % 172 < 86 ? section.accent : colors.cyan;
     ctx.fillRect(0, y, viewW, 3);
   }
+  drawClassicStageDepth(section, baseX, baseY, beat);
   ctx.globalAlpha = 0.16;
   for (let i = 0; i < 34; i++) {
     const x = (baseX * 2.2 + i * 132) % (viewW + 220) - 80;
@@ -1805,6 +1810,39 @@ function drawBackground() {
   }
   drawSpeedStreaks(section);
   ctx.globalAlpha = 1;
+}
+
+function drawClassicStageDepth(section, baseX, baseY, beat) {
+  ctx.save();
+  const horizon = viewH * 0.3 + (baseY % 18);
+  ctx.globalAlpha = 0.1 + beat * 0.03;
+  ctx.strokeStyle = mixHex(section.accent, "#1f2937", 0.3);
+  ctx.lineWidth = 2;
+  for (let i = -7; i <= 7; i++) {
+    ctx.beginPath();
+    ctx.moveTo(viewW / 2 + i * 46, horizon);
+    ctx.lineTo(viewW / 2 + i * 134 + (baseX % 140), viewH + 90);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.13;
+  for (let i = 0; i < 9; i++) {
+    const y = horizon + i * i * 7 + ((baseY * 1.5) % 54);
+    ctx.strokeStyle = i % 2 ? colors.cyan : section.accent;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(viewW, y + 12);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 0.12;
+  for (let i = 0; i < 16; i++) {
+    const x = (baseX * 2.8 + i * 138) % (viewW + 260) - 90;
+    const y = viewH * 0.18 + ((baseY + i * 71) % (viewH * 0.64));
+    ctx.fillStyle = i % 3 === 0 ? colors.pink : i % 3 === 1 ? colors.cyan : colors.yellow;
+    ctx.beginPath();
+    ctx.roundRect(x, y, 52 + (i % 4) * 16, 10, 5);
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function drawSpaceBackground(section, beat) {
@@ -1868,6 +1906,8 @@ function drawJungleBackground(section, beat) {
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, viewW, viewH);
 
+  drawJungleStageDepth(section, baseX, baseY, beat);
+
   ctx.save();
   ctx.globalAlpha = JUNGLE_PERF_MODE ? 0.18 : 0.18 + beat * 0.05;
   ctx.fillStyle = "rgba(20, 83, 45, 0.72)";
@@ -1925,6 +1965,90 @@ function drawJungleBackground(section, beat) {
   ctx.globalAlpha = 1;
 }
 
+function drawJungleStageDepth(section, baseX, baseY, beat) {
+  ctx.save();
+  const sunX = viewW * 0.62 + Math.sin(state.time * 0.18) * 24;
+  const sunY = viewH * 0.12;
+  const glow = ctx.createRadialGradient(sunX, sunY, 20, sunX, sunY, viewW * 0.7);
+  glow.addColorStop(0, "rgba(254, 240, 138, 0.28)");
+  glow.addColorStop(0.4, "rgba(34, 197, 94, 0.08)");
+  glow.addColorStop(1, "rgba(20, 83, 45, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, viewW, viewH);
+
+  ctx.globalAlpha = 0.16 + beat * 0.04;
+  ctx.strokeStyle = "rgba(253, 186, 116, 0.42)";
+  ctx.lineWidth = 34;
+  ctx.lineCap = "round";
+  for (let i = 0; i < 4; i++) {
+    const x = (baseX * 0.7 + i * 280) % (viewW + 340) - 140;
+    ctx.beginPath();
+    ctx.moveTo(x, -70);
+    ctx.lineTo(x + 190, viewH + 60);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.12 + beat * 0.03;
+  ctx.strokeStyle = mixHex(section.accent, "#064e3b", 0.28);
+  ctx.lineWidth = 2.4;
+  const horizon = viewH * 0.24 + (baseY % 24);
+  for (let i = -6; i <= 6; i++) {
+    ctx.beginPath();
+    ctx.moveTo(viewW / 2 + i * 42, horizon);
+    ctx.bezierCurveTo(
+      viewW / 2 + i * 66 + (baseX % 90),
+      viewH * 0.45,
+      viewW / 2 + i * 112 + (baseX % 150),
+      viewH * 0.7,
+      viewW / 2 + i * 160 + (baseX % 210),
+      viewH + 80,
+    );
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.18;
+  for (let i = 0; i < 8; i++) {
+    const y = horizon + i * i * 8 + ((baseY * 1.6) % 70);
+    ctx.strokeStyle = i % 2 ? "#16a34a" : "#84cc16";
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.quadraticCurveTo(viewW * 0.5, y - 26 - i * 2, viewW, y + 4);
+    ctx.stroke();
+  }
+
+  for (let i = 0; i < JUNGLE_DEPTH_LEAF_COUNT; i++) {
+    const x = (baseX * 2.6 + i * 151) % (viewW + 260) - 120;
+    const y = viewH * 0.22 + ((baseY * 0.8 + i * 67) % (viewH * 0.58));
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(-0.55 + (i % 6) * 0.18);
+    ctx.globalAlpha = 0.18 + (i % 3) * 0.04;
+    ctx.fillStyle = i % 2 ? "#22c55e" : mixHex(section.accent, "#14532d", 0.22);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 68 + (i % 4) * 14, 15 + (i % 3) * 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha *= 0.72;
+    ctx.strokeStyle = "#064e3b";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-52, 0);
+    ctx.lineTo(54, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.globalAlpha = 0.24;
+  for (let i = 0; i < 18; i++) {
+    const x = (baseX * 3.1 + i * 117) % (viewW + 180) - 70;
+    const y = viewH * 0.2 + ((baseY + i * 49) % (viewH * 0.66));
+    ctx.fillStyle = i % 3 === 0 ? "#f472b6" : i % 3 === 1 ? "#facc15" : "#2dd4bf";
+    ctx.beginPath();
+    ctx.arc(x, y, 3 + (i % 3), 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function drawTitanicBackground(section, beat) {
   const baseX = -camera.x * 0.08;
   const baseY = -camera.y * 0.04;
@@ -1934,6 +2058,8 @@ function drawTitanicBackground(section, beat) {
   g.addColorStop(1, "#0e7490");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, viewW, viewH);
+
+  drawTitanicStageDepth(section, baseX, baseY, beat);
 
   ctx.save();
   ctx.globalAlpha = 0.26 + beat * 0.04;
@@ -1980,6 +2106,71 @@ function drawTitanicBackground(section, beat) {
   ctx.restore();
   drawSpeedStreaks(section);
   ctx.globalAlpha = 1;
+}
+
+function drawTitanicStageDepth(section, baseX, baseY, beat) {
+  ctx.save();
+  const horizon = viewH * 0.32 + (baseY % 18);
+  ctx.globalAlpha = 0.18 + beat * 0.03;
+  ctx.strokeStyle = mixHex(section.accent, "#e0f2fe", 0.22);
+  ctx.lineWidth = 2;
+  for (let i = -7; i <= 7; i++) {
+    ctx.beginPath();
+    ctx.moveTo(viewW / 2 + i * 54, horizon);
+    ctx.lineTo(viewW / 2 + i * 154 + (baseX % 170), viewH + 90);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.16;
+  for (let i = 0; i < 8; i++) {
+    const y = horizon + i * i * 8 + ((baseY * 1.4) % 62);
+    ctx.strokeStyle = i % 2 ? "#f59e0b" : "#bae6fd";
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(viewW, y + 18);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.24;
+  ctx.fillStyle = "rgba(15, 23, 42, 0.56)";
+  const hullY = viewH * 0.42 + (baseY % 28);
+  ctx.beginPath();
+  ctx.moveTo(-80, hullY + 54);
+  ctx.lineTo(viewW * 0.34, hullY);
+  ctx.lineTo(viewW + 110, hullY + 42);
+  ctx.lineTo(viewW + 80, hullY + 102);
+  ctx.lineTo(-120, hullY + 92);
+  ctx.closePath();
+  ctx.fill();
+
+  for (let i = 0; i < TITANIC_WINDOW_COUNT; i++) {
+    const x = (baseX * 1.7 + i * 74) % (viewW + 180) - 80;
+    const y = hullY + 22 + (i % 3) * 18;
+    ctx.globalAlpha = 0.2 + ((i + Math.floor(state.time * 2)) % 4 === 0 ? 0.18 : 0);
+    ctx.fillStyle = "#fbbf24";
+    ctx.beginPath();
+    ctx.roundRect(x, y, 28, 9, 5);
+    ctx.fill();
+  }
+
+  for (let i = 0; i < TITANIC_ICE_COUNT; i++) {
+    const x = (baseX * 2.2 + i * 167) % (viewW + 300) - 130;
+    const y = viewH * 0.54 + ((baseY + i * 61) % (viewH * 0.38));
+    const s = 0.6 + (i % 4) * 0.22;
+    ctx.globalAlpha = 0.18 + (i % 3) * 0.05;
+    ctx.fillStyle = "rgba(219, 234, 254, 0.48)";
+    ctx.strokeStyle = "rgba(125, 211, 252, 0.58)";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 28 * s);
+    ctx.lineTo(x + 20 * s, y - 34 * s);
+    ctx.lineTo(x + 46 * s, y + 20 * s);
+    ctx.lineTo(x + 28 * s, y + 10 * s);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawSpeedStreaks(section) {
@@ -3534,6 +3725,7 @@ function debugSnapshot() {
     perf: {
       spacePerfMode: SPACE_PERF_MODE,
       junglePerfMode: JUNGLE_PERF_MODE,
+      titanicPerfMode: TITANIC_PERF_MODE,
       routePerfMode: ROUTE_PERF_MODE,
       space3dDisabled: SPACE_3D_DISABLED,
       renderQuality: RENDER_QUALITY_SETTING || "auto",
