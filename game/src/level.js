@@ -98,6 +98,16 @@ function falling(extra = {}) {
   };
 }
 
+function ceilingDrop(extra = {}) {
+  return falling({
+    triggerDistance: 470,
+    armDistance: 220,
+    fallDistance: 132,
+    activeAt: 0.26,
+    ...extra,
+  });
+}
+
 function addSpikeRun(startX, baseY, groups, gap = 58, spikeW = 34) {
   let x = startX;
   for (const count of groups) {
@@ -106,10 +116,17 @@ function addSpikeRun(startX, baseY, groups, gap = 58, spikeW = 34) {
   }
 }
 
-function addCeilingBite(x, railY, w, h = 34, accent = "#2d68ff") {
+function addCeilingBite(x, railY, w, h = 34, accent = "#2d68ff", extra = {}) {
+  const { falling: fallConfig, ...spikeExtra } = extra;
   const y = railY + (CEILING_BITE_DROPS.get(x) || 0);
-  addPlatform(x - 18, y - 28, w + 36, 28, "decor");
-  addSpike(x, y, w, h, "down");
+  platforms.push({
+    ...platform(x - 18, y - 28, w + 36, 28, "decor"),
+    ...(fallConfig ? { falling: fallConfig } : {}),
+  });
+  addSpike(x, y, w, h, "down", {
+    ...spikeExtra,
+    ...(fallConfig ? { falling: fallConfig } : {}),
+  });
   addDecor(x + w / 2, y - 52, "spark", accent, { phase: x * 0.01, scale: 0.5 });
 }
 
@@ -198,10 +215,10 @@ addPlatform(-120, 1120, 1100);
 addSpike(260, 1086, 34, 34, "up");
 addCeilingBite(320, 910, 72, 32, "#2d68ff");
 addSpikeRun(440, 1120, [1, 1], 190);
-addCeilingBite(610, 860, 96, 34, "#2d68ff");
+addCeilingBite(610, 874, 96, 34, "#2d68ff", { falling: ceilingDrop({ warningColor: "#2d68ff", fallDistance: 116 }) });
 addSpike(780, 1086, 34, 34, "up");
 addSpike(930, 1086, 30, 34, "up");
-addCeilingBite(995, 900, 88, 34, "#2d68ff");
+addCeilingBite(995, 900, 88, 34, "#2d68ff", { falling: ceilingDrop({ warningColor: "#60a5fa", triggerDistance: 500, fallDistance: 112 }) });
 addPopupSpike(1080, 1086, 28, 34, "up", { popup: { triggerDistance: 255, extendDistance: 122 } });
 addSpike(1164, 1086, 30, 34, "up");
 addJump(150);
@@ -220,14 +237,14 @@ addPlatform(930, 1120, 280);
 // Section 2: rhythmic spike groups and a down-dot drop cue.
 addPlatform(1190, 1120, 1050);
 addSpikeRun(1240, 1120, [1, 2, 1, 2], 190);
-addCeilingBite(1320, 860, 86, 34, "#22c7d7");
+addCeilingBite(1320, 878, 86, 34, "#22c7d7", { falling: ceilingDrop({ warningColor: "#22c7d7", fallDistance: 124 }) });
 addSpike(1478, 1086, 30, 34, "up");
 addPlatform(1560, 1010, 430, 40);
-addCeilingBite(1690, 1035, 112, 34, "#22c7d7");
+addCeilingBite(1690, 1035, 112, 34, "#22c7d7", { falling: ceilingDrop({ warningColor: "#22c7d7", fallDistance: 98, triggerDistance: 430 }) });
 addPopupSpike(1745, 1086, 26, 34, "up", { popup: { triggerDistance: 250, extendDistance: 120 } });
 addSpike(1848, 976, 42, 34, "up");
 addPopupSpike(1900, 1086, 32, 34, "up", { popup: { triggerDistance: 340, extendDistance: 145 } });
-addCeilingBite(2015, 1025, 96, 34, "#22c7d7");
+addCeilingBite(2015, 1025, 96, 34, "#22c7d7", { falling: ceilingDrop({ warningColor: "#22c7d7", fallDistance: 96, triggerDistance: 430 }) });
 addSpike(2185, 1086, 38, 34, "up");
 trampolines.push(trigger(1458, 1088, 82, 30, "trampoline", { vx: 386, vy: -610 }));
 trampolines.push(trigger(1942, 978, 78, 30, "trampoline", { vx: 404, vy: -520 }));
@@ -246,11 +263,11 @@ downDots.push(trigger(2055, 820, 96, 130, "downImpulse", { power: 760 }));
 
 // Section 3: bad jump trap that throws the player into visible spikes.
 addPlatform(2240, 1120, 840);
-addCeilingBite(2295, 910, 82, 32, "#ff4d6d");
+addCeilingBite(2295, 910, 82, 32, "#ff4d6d", { falling: ceilingDrop({ warningColor: "#ff4d6d", fallDistance: 118 }) });
 traps.push(trigger(2440, 998, 46, 48, "badJump"));
 addPopupSpike(2545, 1086, 30, 34, "up", { popup: { triggerDistance: 260, extendDistance: 125 } });
 addSpike(2710, 1086, 78, 34, "up");
-addCeilingBite(2740, 890, 104, 34, "#ff4d6d");
+addCeilingBite(2740, 890, 104, 34, "#ff4d6d", { falling: ceilingDrop({ warningColor: "#ff4d6d", fallDistance: 120 }) });
 addSpike(2915, 1086, 54, 34, "up");
 addSpike(2360, 1086, 52, 34, "up");
 addJump(2505);
@@ -508,7 +525,7 @@ for (const marker of unreachableBaseSpikes) {
 }
 
 const densityCeilingSpikes = [
-  { x: 1085, y: 875, w: 74, shelf: true },
+  { x: 1085, y: 902, w: 74, shelf: true },
   { x: 1540, y: 958, w: 86, shelf: true, falling: falling({ warningColor: "#22c7d7" }) },
   { x: 3482, y: 690, w: 82, shelf: true },
   { x: 3714, y: 680, w: 64, mover: true },
@@ -539,6 +556,12 @@ densityCeilingSpikes.forEach((spec, index) => {
   const x = scaleCoord(spec.x);
   const y = spec.y;
   const w = spec.w;
+  const fallConfig = spec.falling || (spec.shelf ? ceilingDrop({
+    warningColor: spec.warningColor || (index % 2 ? "#60a5fa" : "#22c7d7"),
+    fallDistance: 108 + (index % 4) * 14,
+    triggerDistance: 450 + (index % 3) * 35,
+    armDistance: 210 + (index % 2) * 34,
+  }) : null);
   if (spec.shelf) {
     platforms.push({
       x: x - 18,
@@ -546,6 +569,7 @@ densityCeilingSpikes.forEach((spec, index) => {
       w: w + 36,
       h: 30,
       kind: "decor",
+      ...(fallConfig ? { falling: fallConfig } : {}),
     });
   }
   hazards.push({
@@ -556,7 +580,7 @@ densityCeilingSpikes.forEach((spec, index) => {
     dir: "down",
     kind: "spike",
     color: "#11131b",
-    ...(spec.falling ? { falling: spec.falling } : {}),
+    ...(fallConfig ? { falling: fallConfig } : {}),
   });
   if (spec.mover) {
     movers.push({

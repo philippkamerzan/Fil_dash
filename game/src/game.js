@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=71";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=72";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -1008,6 +1008,16 @@ function animatedSpikeRect(h) {
   return {
     ...h,
     y: h.dir === "down" ? h.y - shift : h.y + shift,
+  };
+}
+
+function animatedPlatformRect(p) {
+  if (!p.falling) return p;
+  const fall = easeInOutCubic(fallingSpikeProgress(p));
+  const shift = fallingSpikeDistance(p) * (1 - fall);
+  return {
+    ...p,
+    y: p.y - shift,
   };
 }
 
@@ -3158,31 +3168,32 @@ function drawDecorations() {
 function drawPlatforms() {
   for (const p of level.platforms) {
     if (!isVisible(p)) continue;
-    if (SPACE_LEVEL && !p.kind.startsWith("ghost")) {
-      drawSpacePlatform(p);
+    const rect = animatedPlatformRect(p);
+    if (SPACE_LEVEL && !rect.kind.startsWith("ghost")) {
+      drawSpacePlatform(rect);
       continue;
     }
-    if (JUNGLE_LEVEL && !p.kind.startsWith("ghost")) {
-      drawJunglePlatform(p);
+    if (JUNGLE_LEVEL && !rect.kind.startsWith("ghost")) {
+      drawJunglePlatform(rect);
       continue;
     }
-    if (TITANIC_LEVEL && !p.kind.startsWith("ghost")) {
-      drawTitanicPlatform(p);
+    if (TITANIC_LEVEL && !rect.kind.startsWith("ghost")) {
+      drawTitanicPlatform(rect);
       continue;
     }
     ctx.save();
-    const ghost = p.kind.startsWith("ghost");
-    ctx.globalAlpha = p.kind === "ghost-pass" ? 0.38 + Math.sin(state.time * 5 + p.x) * 0.12 : ghost ? 0.7 : 1;
-    ctx.fillStyle = p.kind === "ghost-pass" ? "rgba(139,92,246,0.28)" : p.kind === "ghost-check" ? "rgba(32,197,214,0.34)" : colors.platformFill;
+    const ghost = rect.kind.startsWith("ghost");
+    ctx.globalAlpha = rect.kind === "ghost-pass" ? 0.38 + Math.sin(state.time * 5 + rect.x) * 0.12 : ghost ? 0.7 : 1;
+    ctx.fillStyle = rect.kind === "ghost-pass" ? "rgba(139,92,246,0.28)" : rect.kind === "ghost-check" ? "rgba(32,197,214,0.34)" : colors.platformFill;
     ctx.strokeStyle = colors.ink;
     ctx.lineWidth = ghost ? 3 : 7;
     ctx.beginPath();
-    ctx.roundRect(p.x, p.y, p.w, p.h, 5);
+    ctx.roundRect(rect.x, rect.y, rect.w, rect.h, 5);
     ctx.fill();
     ctx.stroke();
-    drawPlatformScribbles(p);
-    if (p.kind === "ghost-check") drawCheck(p.x + p.w / 2, p.y - 22);
-    if (p.kind === "ghost-pass") drawPassCue(p.x + p.w / 2, p.y - 20);
+    drawPlatformScribbles(rect);
+    if (rect.kind === "ghost-check") drawCheck(rect.x + rect.w / 2, rect.y - 22);
+    if (rect.kind === "ghost-pass") drawPassCue(rect.x + rect.w / 2, rect.y - 20);
     ctx.restore();
   }
 }
