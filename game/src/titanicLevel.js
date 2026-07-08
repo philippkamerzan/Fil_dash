@@ -424,3 +424,153 @@ level.hazards = level.hazards.filter((hazard) =>
   )
 );
 level.testActions.sort((a, b) => a.x - b.x);
+
+function resetGameplayForUniqueTitanicMap() {
+  for (const key of [
+    "platforms",
+    "hazards",
+    "boosters",
+    "downDots",
+    "traps",
+    "yellowZones",
+    "trampolines",
+    "portals",
+    "mouths",
+    "movers",
+    "speedZones",
+    "orbs",
+    "autoPads",
+    "gravityRings",
+    "miniZones",
+    "routeBands",
+    "testActions",
+  ]) {
+    level[key] = [];
+  }
+}
+
+function buildCompleteTitanicMap() {
+  resetGameplayForUniqueTitanicMap();
+  level.world = {
+    ...level.world,
+    start: { x: baseLevel.world.start.x, y: 1206, mode: "cube", gravity: 1 },
+  };
+  level.mapDesign = {
+    uniqueMap: true,
+    source: "hand-authored-titanic-run-v1",
+    note: "Full gameplay arrays are rebuilt here; level 4 has its own ship-deck route.",
+  };
+
+  const segments = [
+    [-160, 840, 1240],
+    [620, 560, 1240],
+    [1080, 760, 1160],
+    [1760, 620, 1160],
+    [2300, 760, 1210],
+    [2960, 1160, 1210],
+    [4040, 760, 1148],
+    [4740, 780, 1148],
+    [5440, 860, 1230],
+    [6240, 740, 1230],
+    [6900, 880, 1110],
+    [7700, 760, 1110],
+    [8380, 820, 1200],
+    [9100, 900, 1200],
+    [9900, 920, 1080],
+    [10760, 760, 1080],
+    [11460, 820, 1180],
+    [12220, 780, 1180],
+    [12920, 920, 1100],
+    [13780, 780, 1100],
+    [14480, 1100, 1220],
+  ];
+  for (const [x, w, y] of segments) {
+    level.platforms.push(platform(x, y, w));
+  }
+
+  const floorHazards = [
+    [280, 1240, 34, false], [620, 1240, 32, true], [970, 1240, 72, false],
+    [1280, 1160, 34, true], [1620, 1160, 34, false], [2050, 1160, 76, false],
+    [2580, 1210, 34, true], [3040, 1210, 34, false], [3460, 1210, 80, false],
+    [3860, 1210, 34, true], [4320, 1148, 34, false], [5200, 1148, 34, true],
+    [5700, 1230, 34, false], [6190, 1230, 76, false], [6680, 1230, 32, true],
+    [7190, 1110, 34, true], [7520, 1110, 34, false], [8100, 1110, 32, true],
+    [8700, 1200, 34, false], [9400, 1200, 34, true], [10180, 1080, 34, false],
+    [10620, 1080, 78, false], [11160, 1080, 34, true], [11760, 1180, 34, false],
+    [12580, 1180, 34, true], [13295, 1100, 34, false], [13610, 1100, 34, true],
+    [14080, 1100, 78, false], [14850, 1220, 34, true],
+  ];
+  for (const [x, platformY, w, hidden] of floorHazards) {
+    level.hazards.push(floorSpike(x, platformY - 34, w, 34, hidden ? { popup: popup({ triggerDistance: 225 }) } : {}));
+    level.testActions.push(jump(x - 106, hidden ? 166 : 130));
+  }
+
+  const ceilingHazards = [
+    [500, 975, 100], [1030, 930, 92], [2240, 900, 104],
+    [3300, 930, 98], [4210, 890, 102], [5180, 890, 104],
+    [6420, 980, 96], [7380, 840, 100], [7900, 835, 104],
+    [9280, 960, 98], [10420, 820, 112], [11960, 930, 96],
+    [13420, 865, 112], [14260, 870, 104],
+  ];
+  for (const [x, y, w] of ceilingHazards) {
+    level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
+  }
+
+  level.yellowZones.push({
+    x: scaleX(2960),
+    y: 790,
+    w: scaleW(1360),
+    h: 440,
+    type: "yellowFlight",
+    targetY: 890,
+    minSpeed: 468,
+  });
+  level.hazards.push(
+    ceilingSpike(3120, 735, 126, 34),
+    ceilingSpike(3690, 735, 126, 34),
+    floorSpike(3400, 1176, 90, 34, { scaleWidth: true }),
+    floorSpike(3980, 1176, 90, 34, { scaleWidth: true }),
+  );
+  level.testActions.push(hold(2940, 1460));
+
+  level.orbs.push(
+    trigger(1180, 1015, 46, 46, "jumpOrb", { power: 590, color: "#7dd3fc" }),
+    trigger(7100, 965, 46, 46, "jumpOrb", { power: 615, color: "#fbbf24" }),
+    trigger(13010, 950, 46, 46, "jumpOrb", { power: 580, color: "#38bdf8" }),
+  );
+  level.speedZones.push(
+    trigger(640, 1134, 90, 132, "fast", { speed: 476 }),
+    trigger(4060, 1038, 90, 132, "fast", { speed: 498 }),
+    trigger(6880, 1000, 90, 132, "fast", { speed: 518 }),
+    trigger(12850, 990, 90, 132, "fast", { speed: 536 }),
+  );
+  level.movers.push(
+    mover(4820, 820, 52, 60, "y", 42, 2.3, 0.5, "#94a3b8"),
+    mover(8500, 805, 50, 58, "x", 82, 2.5, 1.4, "#38bdf8"),
+    mover(12280, 830, 52, 60, "y", 40, 2.55, 2.1, "#fbbf24"),
+  );
+  level.testActions.push(jump(4720, 180), jump(8380, 186), jump(12180, 178), jump(13060, 240));
+
+  const bands = [
+    [60, 1200, 1370, 86, "horizontal", "#38bdf8", { label: "new-lower-deck" }],
+    [1040, 1200, 930, 320, "tunnel3d", "#67e8f9", { vanishY: 710, label: "new-ice-tilt" }],
+    [2920, 1500, 855, 350, "tunnel3d", "#facc15", { vanishY: 705, label: "new-searchlight-flight" }],
+    [5400, 1520, 1305, 82, "horizontal", "#60a5fa", { label: "new-flooded-lowline" }],
+    [6820, 1180, 955, 82, "diagonal", "#22d3ee", { dy: -220, label: "new-deck-lift" }],
+    [9900, 1180, 775, 88, "horizontal", "#a78bfa", { label: "new-upper-pipes" }],
+    [12880, 1240, 920, 330, "tunnel3d", "#fde047", { vanishY: 740, label: "new-iceberg-depth" }],
+    [14460, 1080, 1320, 80, "diagonal", "#7dd3fc", { dy: -135, label: "new-final-ice" }],
+  ];
+  for (const [x, w, y, h, kind, color, extra] of bands) {
+    level.routeBands.push(routeBand(x, w, y, h, kind, color, extra));
+  }
+
+  level.testActions.push(
+    jump(1020, 220), jump(1120, 220), jump(6760, 230), jump(9820, 220),
+    jump(12320, 220), jump(12780, 210), jump(14420, 190),
+  );
+  level.portals.push(trigger(15120, 1040, 120, 205, "finish"));
+  level.testActions.sort((a, b) => a.x - b.x);
+}
+
+buildCompleteTitanicMap();

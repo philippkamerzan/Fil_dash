@@ -348,3 +348,162 @@ level.testActions = level.testActions
 
 replaceOpeningOrbitDeck();
 level.testActions.sort((a, b) => a.x - b.x);
+
+function resetGameplayForUniqueSpaceMap() {
+  for (const key of [
+    "platforms",
+    "hazards",
+    "boosters",
+    "downDots",
+    "traps",
+    "yellowZones",
+    "trampolines",
+    "portals",
+    "mouths",
+    "movers",
+    "speedZones",
+    "orbs",
+    "autoPads",
+    "gravityRings",
+    "miniZones",
+    "routeBands",
+    "testActions",
+  ]) {
+    level[key] = [];
+  }
+}
+
+function runJump(sourceX, w = 136) {
+  return { x: scaleX(sourceX), w, kind: "jump" };
+}
+
+function runHold(sourceX, sourceW) {
+  return { x: scaleX(sourceX), w: scaleW(sourceW), kind: "hold" };
+}
+
+function buildCompleteSpaceRunMap() {
+  resetGameplayForUniqueSpaceMap();
+  level.world = {
+    ...level.world,
+    start: { x: baseLevel.world.start.x, y: 1086, mode: "cube", gravity: 1 },
+  };
+  level.mapDesign = {
+    uniqueMap: true,
+    source: "hand-authored-space-run-v2",
+    note: "Full gameplay arrays are rebuilt here; level 2 does not inherit the level 1 route.",
+  };
+
+  const segments = [
+    [-160, 760, 1120],
+    [560, 470, 1120],
+    [920, 700, 1048],
+    [1540, 500, 1048],
+    [1960, 620, 1120],
+    [2500, 620, 1120],
+    [3040, 1320, 1120],
+    [4260, 820, 1060],
+    [5000, 760, 1060],
+    [5680, 780, 1135],
+    [6380, 720, 1135],
+    [7040, 1120, 1040],
+    [8100, 760, 1040],
+    [8840, 760, 1120],
+    [9500, 760, 1120],
+    [10140, 1180, 1120],
+    [11260, 620, 1120],
+    [11860, 780, 1110],
+    [12580, 660, 1110],
+    [13200, 960, 1110],
+    [14080, 760, 1110],
+    [14760, 980, 1120],
+  ];
+  for (const [x, w, y] of segments) {
+    level.platforms.push(platform(x, y, w));
+  }
+
+  const floorHazards = [
+    [310, 1120, 32, false], [760, 1120, 30, true], [1220, 1048, 34, false],
+    [1510, 1048, 68, false], [2140, 1120, 30, true], [2685, 1120, 42, false],
+    [3330, 1120, 32, true], [3660, 1120, 32, false], [4130, 1120, 30, true],
+    [4640, 1060, 34, false], [5360, 1060, 30, true], [5905, 1135, 36, false],
+    [6280, 1135, 70, false], [6810, 1135, 30, true], [7340, 1040, 32, true],
+    [7725, 1040, 34, false], [8460, 1040, 30, true], [9150, 1120, 36, false],
+    [9720, 1120, 32, true], [10460, 1120, 30, false], [10920, 1120, 68, false],
+    [11640, 1120, 30, true], [12140, 1110, 34, false], [12760, 1110, 34, true],
+    [13420, 1110, 34, false], [13840, 1110, 34, true], [14360, 1110, 72, false],
+    [15020, 1120, 32, true],
+  ];
+  for (const [x, platformY, w, hidden] of floorHazards) {
+    level.hazards.push(floorSpike(x, platformY - 34, w, 34, hidden ? { popup: popup({ triggerDistance: 250 }) } : {}));
+    level.testActions.push(runJump(x - 105, hidden ? 160 : 132));
+  }
+
+  const ceilingHazards = [
+    [650, 890, 90], [1780, 820, 112], [2380, 910, 82],
+    [3860, 835, 102], [4870, 810, 88], [6170, 905, 92],
+    [7560, 795, 84], [8330, 785, 92], [9310, 900, 96],
+    [10840, 750, 114], [12480, 875, 92], [13680, 805, 108],
+    [14520, 815, 94],
+  ];
+  for (const [x, y, w] of ceilingHazards) {
+    level.hazards.push(ceilingSpike(x, y, w, 28, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 230 }) } : {}));
+  }
+
+  level.yellowZones.push({
+    x: scaleX(3040),
+    y: 735,
+    w: scaleW(1360),
+    h: 430,
+    type: "yellowFlight",
+    targetY: 835,
+    minSpeed: 456,
+  });
+  level.hazards.push(
+    ceilingSpike(3200, 700, 118, 34),
+    ceilingSpike(3620, 700, 118, 34),
+    floorSpike(3460, 1086, 86, 34, { scaleWidth: true }),
+    floorSpike(3980, 1086, 86, 34, { scaleWidth: true }),
+  );
+  level.testActions.push(runHold(3020, 1420));
+
+  level.orbs.push(
+    trigger(1155, 925, 46, 46, "jumpOrb", { power: 600, color: "#38bdf8" }),
+    trigger(7340, 900, 46, 46, "jumpOrb", { power: 570, color: "#facc15" }),
+    trigger(13290, 910, 46, 46, "jumpOrb", { power: 585, color: "#f472b6" }),
+  );
+  level.speedZones.push(
+    trigger(540, 1014, 92, 132, "fast", { speed: 462 }),
+    trigger(4380, 948, 92, 132, "fast", { speed: 482 }),
+    trigger(7060, 928, 92, 132, "fast", { speed: 500 }),
+    trigger(13140, 936, 92, 132, "fast", { speed: 520 }),
+  );
+  level.movers.push(
+    { x: scaleX(5580), y: 760, w: 44, h: 52, axis: "y", amp: 42, speed: 2.2, phase: 0.4, kind: "movingHazard", color: "#38bdf8" },
+    { x: scaleX(8720), y: 750, w: 46, h: 54, axis: "x", amp: 76, speed: 2.35, phase: 1.2, kind: "movingHazard", color: "#f43f5e" },
+    { x: scaleX(11940), y: 740, w: 42, h: 50, axis: "y", amp: 38, speed: 2.5, phase: 2.1, kind: "movingHazard", color: "#facc15" },
+  );
+  level.testActions.push(runJump(5500, 170), runJump(8620, 180), runJump(11840, 170));
+
+  const bands = [
+    [80, 950, 1255, 86, "diagonal", "#38bdf8", { dy: -210, label: "new-orbit-takeoff" }],
+    [1040, 1000, 840, 310, "tunnel3d", "#f43f5e", { vanishY: 650, label: "new-meteor-canopy" }],
+    [3000, 1440, 790, 370, "tunnel3d", "#facc15", { vanishY: 690, label: "new-solar-flight" }],
+    [5120, 1440, 1208, 78, "horizontal", "#fb923c", { label: "new-lower-airlock" }],
+    [6900, 1260, 890, 84, "diagonal", "#34d399", { dy: -185, label: "new-orbit-lift" }],
+    [10000, 1320, 700, 92, "horizontal", "#a78bfa", { label: "new-high-station" }],
+    [12900, 1200, 870, 330, "tunnel3d", "#f472b6", { vanishY: 740, label: "new-nova-depth" }],
+    [14320, 980, 1242, 82, "diagonal", "#4ade80", { dy: 160, label: "new-dock-drop" }],
+  ];
+  for (const [x, w, y, h, kind, color, extra] of bands) {
+    level.routeBands.push(routeBand(x, w, y, h, kind, color, extra));
+  }
+
+  level.testActions.push(
+    runJump(720, 210), runJump(860, 210), runJump(1900, 170), runJump(6900, 210),
+    runJump(9900, 210), runJump(12940, 190), runJump(14680, 180),
+  );
+  level.portals.push(trigger(15105, 940, 120, 190, "finish"));
+  level.testActions.sort((a, b) => a.x - b.x);
+}
+
+buildCompleteSpaceRunMap();

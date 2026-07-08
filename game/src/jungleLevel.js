@@ -406,3 +406,153 @@ level.hazards = level.hazards.filter((hazard) =>
   )
 );
 level.testActions.sort((a, b) => a.x - b.x);
+
+function resetGameplayForUniqueJungleMap() {
+  for (const key of [
+    "platforms",
+    "hazards",
+    "boosters",
+    "downDots",
+    "traps",
+    "yellowZones",
+    "trampolines",
+    "portals",
+    "mouths",
+    "movers",
+    "speedZones",
+    "orbs",
+    "autoPads",
+    "gravityRings",
+    "miniZones",
+    "routeBands",
+    "testActions",
+  ]) {
+    level[key] = [];
+  }
+}
+
+function buildCompleteJungleMap() {
+  resetGameplayForUniqueJungleMap();
+  level.world = {
+    ...level.world,
+    start: { x: baseLevel.world.start.x, y: 1156, mode: "cube", gravity: 1 },
+  };
+  level.mapDesign = {
+    uniqueMap: true,
+    source: "hand-authored-jungle-run-v1",
+    note: "Full gameplay arrays are rebuilt here; level 3 is not a decorated copy of level 1.",
+  };
+
+  const segments = [
+    [-160, 880, 1190],
+    [690, 620, 1190],
+    [1190, 760, 1118],
+    [1860, 660, 1118],
+    [2440, 760, 1190],
+    [3120, 1120, 1190],
+    [4180, 620, 1130],
+    [4720, 840, 1130],
+    [5480, 760, 1210],
+    [6160, 760, 1210],
+    [6800, 920, 1090],
+    [7660, 820, 1090],
+    [8420, 820, 1180],
+    [9140, 760, 1180],
+    [9820, 920, 1060],
+    [10660, 760, 1060],
+    [11340, 820, 1160],
+    [12100, 700, 1160],
+    [12740, 960, 1080],
+    [13620, 860, 1080],
+    [14380, 1180, 1190],
+  ];
+  for (const [x, w, y] of segments) {
+    level.platforms.push(platform(x, y, w));
+  }
+
+  const floorHazards = [
+    [320, 1190, 34, false], [640, 1190, 32, true], [980, 1190, 34, false],
+    [1380, 1118, 32, true], [1720, 1118, 72, false], [2140, 1118, 30, true],
+    [2720, 1190, 34, false], [3185, 1190, 34, true], [3580, 1190, 80, false],
+    [4020, 1190, 32, true], [4520, 1130, 34, false], [5120, 1130, 34, true],
+    [5750, 1210, 34, false], [6310, 1210, 74, false], [6660, 1210, 32, true],
+    [7100, 1090, 34, true], [7490, 1090, 32, false], [8130, 1090, 34, true],
+    [8750, 1180, 34, false], [9340, 1180, 34, true], [10150, 1060, 32, false],
+    [10570, 1060, 78, false], [11100, 1060, 30, true], [11680, 1160, 34, false],
+    [12320, 1160, 34, true], [13030, 1080, 32, false], [13450, 1080, 34, true],
+    [13940, 1080, 74, false], [14720, 1190, 34, true],
+  ];
+  for (const [x, platformY, w, hidden] of floorHazards) {
+    level.hazards.push(floorSpike(x, platformY - 34, w, 34, hidden ? { popup: popup({ triggerDistance: 235 }) } : {}));
+    level.testActions.push(jump(x - 108, hidden ? 166 : 132));
+  }
+
+  const ceilingHazards = [
+    [540, 930, 96], [1110, 900, 92], [2280, 870, 104],
+    [3340, 910, 88], [4420, 875, 96], [5240, 870, 104],
+    [6480, 955, 90], [7280, 815, 96], [7940, 805, 102],
+    [9240, 940, 88], [10380, 790, 112], [11860, 910, 94],
+    [13320, 840, 108], [14220, 845, 100],
+  ];
+  for (const [x, y, w] of ceilingHazards) {
+    level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
+  }
+
+  level.yellowZones.push({
+    x: scaleX(3140),
+    y: 780,
+    w: scaleW(1260),
+    h: 430,
+    type: "yellowFlight",
+    targetY: 870,
+    minSpeed: 460,
+  });
+  level.hazards.push(
+    ceilingSpike(3310, 720, 126, 34),
+    ceilingSpike(3820, 720, 126, 34),
+    floorSpike(3560, 1156, 90, 34, { scaleWidth: true }),
+    floorSpike(4070, 1156, 90, 34, { scaleWidth: true }),
+  );
+  level.testActions.push(hold(3110, 1380));
+
+  level.orbs.push(
+    trigger(1260, 980, 46, 46, "jumpOrb", { power: 590, color: "#22c55e" }),
+    trigger(7080, 945, 46, 46, "jumpOrb", { power: 610, color: "#facc15" }),
+    trigger(12870, 930, 46, 46, "jumpOrb", { power: 570, color: "#84cc16" }),
+  );
+  level.speedZones.push(
+    trigger(700, 1084, 90, 132, "fast", { speed: 470 }),
+    trigger(4210, 1018, 90, 132, "fast", { speed: 488 }),
+    trigger(6800, 980, 90, 132, "fast", { speed: 510 }),
+    trigger(12640, 970, 90, 132, "fast", { speed: 526 }),
+  );
+  level.movers.push(
+    mover(4880, 790, 50, 58, "y", 42, 2.25, 0.2, "#16a34a"),
+    mover(8550, 780, 48, 56, "x", 78, 2.45, 1.1, "#65a30d"),
+    mover(12080, 800, 52, 58, "y", 40, 2.5, 2.0, "#22c55e"),
+  );
+  level.testActions.push(jump(4780, 180), jump(8440, 180), jump(11980, 176));
+
+  const bands = [
+    [80, 1200, 1325, 84, "horizontal", "#22c55e", { label: "new-root-floor" }],
+    [1200, 1120, 870, 320, "tunnel3d", "#84cc16", { vanishY: 700, label: "new-canopy-depth" }],
+    [3080, 1400, 835, 350, "tunnel3d", "#facc15", { vanishY: 690, label: "new-vine-flight" }],
+    [5400, 1480, 1280, 82, "horizontal", "#06b6d4", { label: "new-swamp-lowline" }],
+    [6740, 1200, 940, 82, "diagonal", "#34d399", { dy: -220, label: "new-temple-lift" }],
+    [9800, 1160, 760, 88, "horizontal", "#a855f7", { label: "new-high-canopy" }],
+    [12680, 1200, 900, 330, "tunnel3d", "#f472b6", { vanishY: 745, label: "new-predator-depth" }],
+    [14380, 1060, 1300, 80, "diagonal", "#4ade80", { dy: -120, label: "new-jungle-finish" }],
+  ];
+  for (const [x, w, y, h, kind, color, extra] of bands) {
+    level.routeBands.push(routeBand(x, w, y, h, kind, color, extra));
+  }
+
+  level.testActions.push(
+    jump(1060, 220), jump(1180, 220), jump(6680, 230), jump(9720, 220),
+    jump(12600, 210), jump(14320, 190),
+  );
+  level.portals.push(trigger(15120, 1010, 120, 200, "finish"));
+  level.testActions.sort((a, b) => a.x - b.x);
+}
+
+buildCompleteJungleMap();
