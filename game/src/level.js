@@ -219,7 +219,7 @@ addPlatform(2240, 1120, 840);
 addCeilingBite(2295, 910, 82, 32, "#ff4d6d");
 traps.push(trigger(2440, 998, 46, 48, "badJump"));
 addPopupSpike(2545, 1086, 30, 34, "up", { popup: { triggerDistance: 260, extendDistance: 125 } });
-addSpike(2670, 1086, 90, 34, "up");
+addSpike(2710, 1086, 78, 34, "up");
 addCeilingBite(2740, 890, 104, 34, "#ff4d6d");
 addSpike(2915, 1086, 54, 34, "up");
 addSpike(2360, 1086, 52, 34, "up");
@@ -258,7 +258,7 @@ portals.push(trigger(6715, 982, 104, 170, "planeOut", {
 addPlatform(6880, 930, 1210, 44);
 addSpike(7040, 896, 36, 34, "up");
 addSpikeRun(7240, 930, [1, 1, 2, 1], 178, 32);
-addPopupSpike(7835, 896, 30, 34, "up", { popup: { triggerDistance: 330, extendDistance: 130 } });
+addPopupSpike(7875, 896, 30, 34, "up", { popup: { triggerDistance: 330, extendDistance: 130 } });
 orbs.push(
   trigger(7270, 790, 46, 46, "jumpOrb", { power: 620, color: "#34d399" }),
   trigger(7640, 775, 46, 46, "jumpOrb", { power: 660, color: "#ffd84d" }),
@@ -470,6 +470,23 @@ for (const marker of unreachableBaseSpikes) {
   );
   if (index >= 0) hazards.splice(index, 1);
 }
+
+const densityCeilingSpikes = [
+  1085, 3482, 3714, 3946, 4178, 4885, 5335, 5570, 6198, 6587, 6813,
+  7455, 8181, 8461, 9000, 10078, 10487, 10678, 13178, 13610, 14195,
+];
+
+densityCeilingSpikes.forEach((sourceX, index) => {
+  hazards.push({
+    x: scaleCoord(sourceX),
+    y: sourceX > 13000 ? 610 : index % 3 === 0 ? 650 : index % 3 === 1 ? 700 : 745,
+    w: index % 2 === 0 ? 72 : 58,
+    h: 24,
+    dir: "down",
+    kind: "spike",
+    color: "#11131b",
+  });
+});
 
 export const level = {
   id: "level-1",

@@ -516,6 +516,15 @@ function buildCompleteTitanicMap() {
     level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
   }
 
+  const densityCeilings = [
+    805, 1450, 1835, 2410, 2770, 4570, 5000, 5450, 5945, 7710,
+    8300, 8893, 9087, 9660, 9920, 10890, 11360, 11560, 12120,
+    12430, 13845, 14457, 14653,
+  ];
+  densityCeilings.forEach((x, index) => {
+    level.hazards.push(ceilingSpike(x, index % 3 === 0 ? 700 : index % 3 === 1 ? 745 : 790, index % 2 ? 60 : 76, 24));
+  });
+
   level.yellowZones.push({
     x: scaleX(2960),
     y: 790,

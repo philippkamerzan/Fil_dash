@@ -498,6 +498,14 @@ function buildCompleteJungleMap() {
     level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
   }
 
+  const densityCeilings = [
+    1550, 1930, 2500, 2930, 4700, 5495, 5937, 6123, 7715, 8340,
+    8995, 9610, 9880, 10835, 11293, 11487, 12480, 13695, 14470, 14930,
+  ];
+  densityCeilings.forEach((x, index) => {
+    level.hazards.push(ceilingSpike(x, index % 3 === 0 ? 680 : index % 3 === 1 ? 730 : 775, index % 2 ? 60 : 74, 24));
+  });
+
   level.yellowZones.push({
     x: scaleX(3140),
     y: 780,

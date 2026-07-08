@@ -430,7 +430,7 @@ function buildCompleteSpaceRunMap() {
     [7725, 1040, 34, false], [8460, 1040, 30, true], [9150, 1120, 36, false],
     [9720, 1120, 32, true], [10460, 1120, 30, false], [10920, 1120, 68, false],
     [11640, 1120, 30, true], [12140, 1110, 34, false], [12760, 1110, 34, true],
-    [13420, 1110, 34, false], [13840, 1110, 34, true], [14360, 1110, 72, false],
+    [13520, 1110, 34, false], [13840, 1110, 34, true], [14360, 1110, 72, false],
     [15020, 1120, 32, true],
   ];
   for (const [x, platformY, w, hidden] of floorHazards) {
@@ -448,6 +448,14 @@ function buildCompleteSpaceRunMap() {
   for (const [x, y, w] of ceilingHazards) {
     level.hazards.push(ceilingSpike(x, y, w, 28, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 230 }) } : {}));
   }
+
+  const densityCeilings = [
+    957, 1960, 2533, 2862, 5115, 5742, 6545, 7927, 8128, 8935,
+    9515, 9967, 10213, 10650, 11160, 11400, 11790, 12310, 12950, 14100, 14770,
+  ];
+  densityCeilings.forEach((x, index) => {
+    level.hazards.push(ceilingSpike(x, index % 3 === 0 ? 640 : index % 3 === 1 ? 690 : 735, index % 2 ? 58 : 72, 24));
+  });
 
   level.yellowZones.push({
     x: scaleX(3040),

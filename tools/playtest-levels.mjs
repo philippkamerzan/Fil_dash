@@ -467,8 +467,8 @@ function runLevel(level, variant) {
     const pop = spikePopProgress(h);
     if (h.popup && pop < 0.48) return { x: h.x, y: h.y, w: 0, h: 0 };
     const spikeRect = animatedSpikeRect(h);
-    const insetX = Math.min(12, h.w * 0.18);
-    const activeH = h.h * 0.68 * (h.popup ? Math.max(0.28, pop) : 1);
+    const insetX = Math.min(6, h.w * 0.08);
+    const activeH = (h.h - Math.min(6, h.h * 0.18)) * (h.popup ? Math.max(0.28, pop) : 1);
     return {
       x: spikeRect.x + insetX,
       y: spikeRect.dir === "down" ? spikeRect.y : spikeRect.y + spikeRect.h - activeH,
