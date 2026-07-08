@@ -28,6 +28,7 @@ const rewardResultEl = document.querySelector("#rewardResult");
 const localLeaderboardEl = document.querySelector("#localLeaderboard");
 const globalLeaderboardEl = document.querySelector("#globalLeaderboard");
 const skinShopEl = document.querySelector("#skinShop");
+const planeSkinShopEl = document.querySelector("#planeSkinShop");
 
 const searchParams = new URLSearchParams(window.location.search);
 const level = getLevelById(searchParams.get("level") || searchParams.get("levelId"));
@@ -52,6 +53,8 @@ const RECORD_REWARDS_KEY = `filDash.recordRewards.${LEVEL_ID}.v1`;
 const WALLET_KEY = "filDash.wallet.v1";
 const SKINS_KEY = "filDash.skins.v1";
 const SELECTED_SKIN_KEY = "filDash.selectedSkin.v1";
+const PLANE_SKINS_KEY = "filDash.planeSkins.v1";
+const SELECTED_PLANE_SKIN_KEY = "filDash.selectedPlaneSkin.v1";
 const PLAYER_ID_KEY = "filDash.playerId.v1";
 const MAX_LOCAL_RECORDS = 12;
 const HOLD_THRESHOLD_SECONDS = 0.1;
@@ -118,6 +121,62 @@ const PLAYER_SKINS = [
   { id: "neon", name: "Neon", price: 32, body: "#7c3aed", mini: "#a855f7", eye: "#67e8f9", trail: "#22d3ee", plane: "#8b5cf6" },
 ];
 const DEFAULT_SKIN_ID = PLAYER_SKINS[0].id;
+const PLANE_SKIN_PREVIEW_FREE = true;
+const PLANE_SKINS = [
+  {
+    id: "starter",
+    name: "Scout",
+    price: 0,
+    model: "starter",
+    body: "#e8f3ff",
+    body2: "#93c5fd",
+    wing: "#c7d2fe",
+    trim: "#334155",
+    flame: "classic",
+    swatch: "linear-gradient(135deg, #e8f3ff 0%, #93c5fd 100%)",
+    flameSwatch: "linear-gradient(90deg, #94a3b8, #e2e8f0)",
+  },
+  {
+    id: "cosmic-gold",
+    name: "Cosmo",
+    price: 18,
+    model: "cosmic",
+    body: "#172554",
+    body2: "#38bdf8",
+    wing: "#312e81",
+    trim: "#7dd3fc",
+    flame: "gold",
+    swatch: "radial-gradient(circle at 35% 35%, #93c5fd 0 12%, #172554 34%, #312e81 100%)",
+    flameSwatch: "linear-gradient(90deg, #f97316, #fde047)",
+  },
+  {
+    id: "rainbow-cosmic",
+    name: "Rainbow",
+    price: 28,
+    model: "rainbow",
+    body: "#ffffff",
+    body2: "#22d3ee",
+    wing: "#f472b6",
+    trim: "#111827",
+    flame: "cosmic",
+    swatch: "linear-gradient(135deg, #ef4444, #facc15, #22c55e, #38bdf8, #a855f7)",
+    flameSwatch: "radial-gradient(circle, #7dd3fc 0 18%, #312e81 52%, #020617 100%)",
+  },
+  {
+    id: "gold-rainbow",
+    name: "Gold Jet",
+    price: 40,
+    model: "gold",
+    body: "#facc15",
+    body2: "#f97316",
+    wing: "#fbbf24",
+    trim: "#78350f",
+    flame: "rainbow",
+    swatch: "linear-gradient(135deg, #fff7ad, #facc15 48%, #f97316)",
+    flameSwatch: "linear-gradient(90deg, #ef4444, #facc15, #22c55e, #38bdf8, #a855f7)",
+  },
+];
+const DEFAULT_PLANE_SKIN_ID = PLANE_SKINS[0].id;
 
 const MOUTH_CLOSE_SECONDS = 0.24;
 const MOUTH_TOOTH_H = 26;
@@ -373,6 +432,8 @@ const economy = {
   coins: 0,
   ownedSkins: new Set([DEFAULT_SKIN_ID]),
   selectedSkinId: DEFAULT_SKIN_ID,
+  ownedPlaneSkins: new Set([DEFAULT_PLANE_SKIN_ID]),
+  selectedPlaneSkinId: DEFAULT_PLANE_SKIN_ID,
 };
 
 let dpr = 1;
@@ -411,11 +472,16 @@ function normalizeTestVariant(value) {
 function loadEconomy() {
   const wallet = safeParseJson(localStorage.getItem(WALLET_KEY), {});
   const skins = safeParseJson(localStorage.getItem(SKINS_KEY), {});
+  const planeSkins = safeParseJson(localStorage.getItem(PLANE_SKINS_KEY), {});
   const owned = Array.isArray(skins.owned) ? skins.owned.filter((id) => skinById(id)) : [];
+  const ownedPlanes = Array.isArray(planeSkins.owned) ? planeSkins.owned.filter((id) => planeSkinById(id)) : [];
   economy.coins = Math.max(0, Math.floor(Number(wallet.coins) || 0));
   economy.ownedSkins = new Set([DEFAULT_SKIN_ID, ...owned]);
   const selected = localStorage.getItem(SELECTED_SKIN_KEY) || skins.selected || DEFAULT_SKIN_ID;
   economy.selectedSkinId = economy.ownedSkins.has(selected) && skinById(selected) ? selected : DEFAULT_SKIN_ID;
+  economy.ownedPlaneSkins = new Set([DEFAULT_PLANE_SKIN_ID, ...ownedPlanes]);
+  const selectedPlane = localStorage.getItem(SELECTED_PLANE_SKIN_KEY) || planeSkins.selected || DEFAULT_PLANE_SKIN_ID;
+  economy.selectedPlaneSkinId = planeSkinCanUse(selectedPlane) ? selectedPlane : DEFAULT_PLANE_SKIN_ID;
 }
 
 function saveEconomy() {
@@ -424,7 +490,12 @@ function saveEconomy() {
     owned: [...economy.ownedSkins],
     selected: economy.selectedSkinId,
   }));
+  localStorage.setItem(PLANE_SKINS_KEY, JSON.stringify({
+    owned: [...economy.ownedPlaneSkins],
+    selected: economy.selectedPlaneSkinId,
+  }));
   localStorage.setItem(SELECTED_SKIN_KEY, economy.selectedSkinId);
+  localStorage.setItem(SELECTED_PLANE_SKIN_KEY, economy.selectedPlaneSkinId);
 }
 
 function skinById(id) {
@@ -433,6 +504,19 @@ function skinById(id) {
 
 function currentSkin() {
   return skinById(economy.selectedSkinId) || PLAYER_SKINS[0];
+}
+
+function planeSkinById(id) {
+  return PLANE_SKINS.find((skin) => skin.id === id);
+}
+
+function planeSkinCanUse(id) {
+  const skin = planeSkinById(id);
+  return !!skin && (PLANE_SKIN_PREVIEW_FREE || skin.price === 0 || economy.ownedPlaneSkins.has(id));
+}
+
+function currentPlaneSkin() {
+  return planeSkinById(economy.selectedPlaneSkinId) || PLANE_SKINS[0];
 }
 
 function recordRewards() {
@@ -506,6 +590,62 @@ function renderSkinShop() {
       updateRecordsUi();
     });
     skinShopEl.append(button);
+  }
+}
+
+function renderPlaneSkinShop() {
+  if (!planeSkinShopEl) return;
+  planeSkinShopEl.replaceChildren();
+  for (const skin of PLANE_SKINS) {
+    const owned = economy.ownedPlaneSkins.has(skin.id) || skin.price === 0;
+    const canUse = planeSkinCanUse(skin.id);
+    const active = economy.selectedPlaneSkinId === skin.id;
+    const affordable = economy.coins >= skin.price;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "skin-choice plane-skin-choice";
+    button.classList.toggle("active", active);
+    button.disabled = !canUse && !affordable;
+    button.setAttribute("aria-pressed", String(active));
+    button.dataset.planeSkinId = skin.id;
+
+    const swatch = document.createElement("span");
+    swatch.className = "skin-swatch plane-swatch";
+    swatch.style.background = skin.swatch;
+    const flame = document.createElement("span");
+    flame.className = "plane-swatch-flame";
+    flame.style.background = skin.flameSwatch;
+    const craft = document.createElement("span");
+    craft.className = "plane-swatch-craft";
+    craft.style.background = skin.model === "gold" ? skin.body : skin.body2;
+    swatch.append(flame, craft);
+
+    const copy = document.createElement("span");
+    copy.className = "skin-copy";
+    const title = document.createElement("b");
+    title.textContent = skin.name;
+    const meta = document.createElement("span");
+    meta.textContent = active
+      ? "Выбран"
+      : PLANE_SKIN_PREVIEW_FREE && !owned
+        ? `Сейчас 0, потом ${skin.price}`
+        : owned
+          ? "Есть"
+          : `${skin.price} мон.`;
+    copy.append(title, meta);
+    button.append(swatch, copy);
+
+    button.addEventListener("click", () => {
+      if (!planeSkinCanUse(skin.id)) {
+        if (economy.coins < skin.price) return;
+        economy.coins -= skin.price;
+        economy.ownedPlaneSkins.add(skin.id);
+      }
+      economy.selectedPlaneSkinId = skin.id;
+      saveEconomy();
+      updateRecordsUi();
+    });
+    planeSkinShopEl.append(button);
   }
 }
 
@@ -748,6 +888,7 @@ function updateRecordsUi() {
   renderLeaderboard(localLeaderboardEl, localRecords, "Пока пусто");
   renderLeaderboard(globalLeaderboardEl, state.globalLeaderboard, state.globalLeaderboardReady ? "Пока пусто" : "Нет связи");
   renderSkinShop();
+  renderPlaneSkinShop();
 }
 
 async function refreshGlobalLeaderboard() {
@@ -3317,8 +3458,14 @@ function drawPlayer() {
   ctx.save();
   ctx.translate(-camera.x, -camera.y);
   const skin = currentSkin();
-  for (const t of player.trail) {
+  const planeSkin = currentPlaneSkin();
+  for (let index = 0; index < player.trail.length; index += 1) {
+    const t = player.trail[index];
     ctx.globalAlpha = Math.max(0, t.life * 2.2);
+    if (t.mode === "plane") {
+      drawPlaneTrailDot(t, planeSkin, index);
+      continue;
+    }
     ctx.fillStyle = t.activeYellow ? colors.yellow : t.mode === "plane" ? skin.plane : t.mini ? skin.mini : skin.trail;
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.activeYellow ? 10 : t.mini ? 5 : 7, 0, Math.PI * 2);
@@ -3328,6 +3475,23 @@ function drawPlayer() {
     if (player.mode === "plane") drawPlane();
     else drawCube();
   }
+  ctx.restore();
+}
+
+function drawPlaneTrailDot(t, planeSkin, index) {
+  const alpha = ctx.globalAlpha;
+  const pulse = 0.75 + Math.sin(state.time * 9 + index * 0.7) * 0.2;
+  const size = 4.5 + (index % 3) * 1.6;
+  ctx.save();
+  ctx.globalAlpha = alpha * pulse;
+  ctx.fillStyle = planeTrailColor(planeSkin, index, t);
+  if (planeSkin.flame === "cosmic") {
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 8;
+  }
+  ctx.beginPath();
+  ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -3353,26 +3517,182 @@ function drawCube() {
 }
 
 function drawPlane() {
-  const skin = currentSkin();
+  const planeSkin = currentPlaneSkin();
   const cx = player.x + player.w / 2;
   const cy = player.y + player.h / 2;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(player.angle);
   ctx.scale(player.portalScale, player.portalScale);
-  ctx.fillStyle = skin.plane;
+  drawPlaneFlame(planeSkin);
+  drawPlaneBody(planeSkin);
+  drawPlaneCockpit(planeSkin.model);
+  ctx.restore();
+}
+
+function planeTrailColor(planeSkin, index, t) {
+  if (planeSkin.flame === "gold") return index % 2 ? "#f97316" : "#fde047";
+  if (planeSkin.flame === "cosmic") return index % 3 === 0 ? "#7dd3fc" : index % 3 === 1 ? "#a78bfa" : "#f0abfc";
+  if (planeSkin.flame === "rainbow") {
+    const palette = ["#ef4444", "#f97316", "#facc15", "#22c55e", "#38bdf8", "#a855f7"];
+    return palette[Math.abs(Math.floor((t.x + index * 19) / 18)) % palette.length];
+  }
+  return index % 2 ? "#94a3b8" : "#e2e8f0";
+}
+
+function drawPlaneFlame(planeSkin) {
+  const pulse = 0.82 + Math.sin(state.time * 18) * 0.18;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  if (planeSkin.flame === "gold") {
+    ctx.fillStyle = "#f97316";
+    ctx.beginPath();
+    ctx.moveTo(-22, -9);
+    ctx.lineTo(-45 * pulse, 0);
+    ctx.lineTo(-22, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#fde047";
+    ctx.beginPath();
+    ctx.moveTo(-22, -5);
+    ctx.lineTo(-36 * pulse, 0);
+    ctx.lineTo(-22, 5);
+    ctx.closePath();
+    ctx.fill();
+  } else if (planeSkin.flame === "cosmic") {
+    const palette = ["#7dd3fc", "#a78bfa", "#f0abfc"];
+    for (let i = 0; i < 4; i += 1) {
+      ctx.strokeStyle = palette[i % palette.length];
+      ctx.lineWidth = 4 - (i % 2);
+      ctx.globalAlpha = 0.72;
+      ctx.beginPath();
+      ctx.moveTo(-22, -9 + i * 6);
+      ctx.quadraticCurveTo(-34 - i * 5 * pulse, -15 + i * 10, -45 - i * 2, -8 + i * 5);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  } else if (planeSkin.flame === "rainbow") {
+    const palette = ["#ef4444", "#f97316", "#facc15", "#22c55e", "#38bdf8", "#a855f7"];
+    for (let i = 0; i < palette.length; i += 1) {
+      ctx.strokeStyle = palette[i];
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(-21, -12 + i * 4.8);
+      ctx.lineTo(-36 - (i % 2) * 7 * pulse, -17 + i * 5.8);
+      ctx.stroke();
+    }
+  } else {
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 4;
+    for (let i = -1; i <= 1; i += 1) {
+      ctx.beginPath();
+      ctx.moveTo(-21, i * 7);
+      ctx.lineTo(-36 * pulse, i * 10);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawPlaneBody(planeSkin) {
+  ctx.save();
+  ctx.lineJoin = "round";
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 5;
+  if (planeSkin.model === "cosmic") {
+    const g = ctx.createLinearGradient(-18, -18, 28, 18);
+    g.addColorStop(0, planeSkin.body);
+    g.addColorStop(0.62, planeSkin.wing);
+    g.addColorStop(1, planeSkin.body2);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(28, 0);
+    ctx.lineTo(2, -16);
+    ctx.lineTo(-19, -13);
+    ctx.lineTo(-16, 13);
+    ctx.lineTo(3, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#e0f2fe";
+    for (const [x, y, r] of [[-8, -5, 2], [6, 7, 2], [13, -3, 1.8]]) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (planeSkin.model === "rainbow") {
+    const g = ctx.createLinearGradient(-22, -16, 28, 18);
+    ["#ef4444", "#facc15", "#22c55e", "#38bdf8", "#a855f7"].forEach((color, index, list) => {
+      g.addColorStop(index / (list.length - 1), color);
+    });
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 28, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+    ctx.fillRect(-24, -3, 48, 6);
+  } else if (planeSkin.model === "gold") {
+    const g = ctx.createLinearGradient(-20, -18, 28, 18);
+    g.addColorStop(0, "#fef3c7");
+    g.addColorStop(0.45, planeSkin.body);
+    g.addColorStop(1, planeSkin.body2);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(29, 0);
+    ctx.lineTo(0, -17);
+    ctx.lineTo(-22, -14);
+    ctx.lineTo(-11, 0);
+    ctx.lineTo(-22, 14);
+    ctx.lineTo(0, 17);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = "#fff7ad";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-9, -7);
+    ctx.lineTo(16, -2);
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = planeSkin.body;
+    ctx.beginPath();
+    ctx.roundRect(-22, -12, 32, 24, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = planeSkin.body2;
+    ctx.beginPath();
+    ctx.moveTo(28, 0);
+    ctx.lineTo(8, -17);
+    ctx.lineTo(8, 17);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = planeSkin.wing;
+    ctx.fillRect(-10, -18, 16, 9);
+    ctx.fillRect(-10, 9, 16, 9);
+  }
+  ctx.restore();
+}
+
+function drawPlaneCockpit(model) {
+  const domeY = model === "rainbow" ? -7 : -11;
+  ctx.save();
+  ctx.strokeStyle = colors.ink;
+  ctx.lineWidth = 4;
+  ctx.fillStyle = "rgba(226, 232, 240, 0.94)";
   ctx.beginPath();
-  ctx.moveTo(26, 0);
-  ctx.lineTo(-18, -18);
-  ctx.lineTo(-8, 0);
-  ctx.lineTo(-18, 18);
+  ctx.arc(-1, domeY, 10, Math.PI, 0);
+  ctx.lineTo(9, domeY + 8);
+  ctx.lineTo(-11, domeY + 8);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = skin.eye;
-  ctx.fillRect(-5, -5, 13, 10);
+  ctx.fillStyle = "#111827";
+  ctx.fillRect(-5, domeY - 4, 9, 4);
+  ctx.fillStyle = "#f8fafc";
+  ctx.fillRect(-2, domeY + 2, 4, 7);
   ctx.restore();
 }
 
@@ -3768,6 +4088,8 @@ function debugSnapshot() {
       coins: economy.coins,
       selectedSkinId: economy.selectedSkinId,
       ownedSkins: [...economy.ownedSkins],
+      selectedPlaneSkinId: economy.selectedPlaneSkinId,
+      ownedPlaneSkins: [...economy.ownedPlaneSkins],
       rewardKey: RECORD_REWARDS_KEY,
     },
     perf: {

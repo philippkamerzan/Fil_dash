@@ -441,7 +441,7 @@ body.test-mode .results-panel {
   max-height: min(58vh, 430px);
   display: grid;
   gap: 12px;
-  overflow: hidden;
+  overflow: auto;
   pointer-events: auto;
 }
 
@@ -510,6 +510,10 @@ body.test-mode .results-panel {
   padding: 10px;
 }
 
+.shop-panel .skin-shop + h2 {
+  margin-top: 10px;
+}
+
 .skin-shop {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -550,6 +554,38 @@ body.test-mode .results-panel {
   border: 3px solid #11131b;
   border-radius: 7px;
   box-shadow: inset 7px 7px 0 rgba(255, 255, 255, 0.22);
+}
+
+.plane-swatch {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: inset 5px 5px 0 rgba(255, 255, 255, 0.18);
+}
+
+.plane-swatch-flame,
+.plane-swatch-craft {
+  position: absolute;
+  display: block;
+}
+
+.plane-swatch-flame {
+  left: 2px;
+  top: 10px;
+  width: 14px;
+  height: 8px;
+  border-radius: 999px 0 0 999px;
+  opacity: 0.95;
+}
+
+.plane-swatch-craft {
+  right: 4px;
+  top: 8px;
+  width: 18px;
+  height: 11px;
+  border: 2px solid #11131b;
+  border-radius: 9px 10px 10px 3px;
+  transform: skewX(-14deg);
 }
 
 .skin-copy {
