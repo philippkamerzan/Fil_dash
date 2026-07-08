@@ -64,6 +64,7 @@ const LOW_CPU_HINT = (navigator.hardwareConcurrency || 4) <= 4;
 const RENDER_QUALITY_SETTING = String(searchParams.get("quality") || searchParams.get("detail") || "").trim().toLowerCase();
 const FORCE_LOW_DETAIL = RENDER_QUALITY_SETTING === "low" || RENDER_QUALITY_SETTING === "lite" || searchParams.has("lowDetail");
 const FORCE_HIGH_DETAIL = RENDER_QUALITY_SETTING === "high" || RENDER_QUALITY_SETTING === "full";
+const TELEGRAM_CHROME_SAFE = detectTelegramRuntime() || queryFlag("telegramChrome") || queryFlag("tgChromeSafe");
 const SPACE_PERF_MODE = SPACE_LEVEL && !TEST_RUN && SPACE_3D_SETTING !== "high" && (TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT || SPACE_3D_SETTING === "low");
 const JUNGLE_PERF_MODE = JUNGLE_LEVEL && !FORCE_HIGH_DETAIL && (FORCE_LOW_DETAIL || TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT);
 const ROUTE_PERF_MODE = SPACE_PERF_MODE || JUNGLE_PERF_MODE;
@@ -84,6 +85,7 @@ const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
 const PLAYER_SPAWN_SIZE = 34;
 
 document.body.classList.toggle("test-mode", TEST_MODE);
+document.body.classList.toggle("telegram-webapp", TELEGRAM_CHROME_SAFE);
 
 const keys = {
   jump: false,
@@ -139,6 +141,12 @@ function scaleLevelX(x) {
 function queryFlag(name) {
   const value = String(searchParams.get(name) || "").trim().toLowerCase();
   return searchParams.has(name) && value !== "0" && value !== "false" && value !== "off";
+}
+
+function detectTelegramRuntime() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return false;
+  return Boolean(tg.initData || tg.initDataUnsafe?.user || (tg.platform && tg.platform !== "unknown"));
 }
 
 function buildTestCheckpoints() {

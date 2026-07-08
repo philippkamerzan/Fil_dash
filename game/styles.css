@@ -806,6 +806,72 @@ body.test-mode .results-panel {
   }
 }
 
+@media (orientation: landscape) and (max-height: 620px) {
+  body.telegram-webapp {
+    --tg-chrome-left: clamp(200px, 19vw, 252px);
+    --tg-chrome-right: clamp(148px, 17vw, 222px);
+  }
+
+  body.telegram-webapp .hud {
+    top: max(8px, env(safe-area-inset-top));
+    left: max(var(--tg-chrome-left), env(safe-area-inset-left));
+    right: max(var(--tg-chrome-right), env(safe-area-inset-right));
+    height: 78px;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  body.telegram-webapp .brand {
+    display: none;
+  }
+
+  body.telegram-webapp .icon-button:first-of-type {
+    margin-left: 0;
+  }
+
+  body.telegram-webapp .icon-button {
+    position: absolute;
+    top: 42px;
+    width: 36px;
+    flex-basis: 36px;
+    height: 34px;
+  }
+
+  body.telegram-webapp #pauseToggle {
+    right: 8px;
+  }
+
+  body.telegram-webapp #soundToggle {
+    right: 50px;
+  }
+
+  body.telegram-webapp #menuToggle {
+    right: 92px;
+  }
+
+  body.telegram-webapp .progress-track {
+    top: calc(max(8px, env(safe-area-inset-top)) + 84px);
+    left: max(var(--tg-chrome-left), env(safe-area-inset-left));
+    right: max(var(--tg-chrome-right), env(safe-area-inset-right));
+  }
+}
+
+@media (orientation: landscape) and (max-height: 620px) and (max-width: 860px) {
+  body.telegram-webapp .section-pill {
+    display: none;
+  }
+
+  body.telegram-webapp .hud-stat {
+    min-width: 66px;
+    padding: 0 8px;
+  }
+
+  body.telegram-webapp .record-stat {
+    min-width: 96px;
+  }
+}
+
 body.force-landscape .hud {
   top: max(8px, env(safe-area-inset-top));
   left: max(10px, env(safe-area-inset-left));
