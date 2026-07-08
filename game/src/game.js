@@ -61,16 +61,25 @@ const TEST_VARIANT_TIME_SHIFT = TEST_VARIANT === "early" ? -0.08 : TEST_VARIANT 
 const TOUCH_DEVICE = navigator.maxTouchPoints > 0 || window.matchMedia?.("(pointer: coarse)")?.matches;
 const SMALL_VIEWPORT = Math.min(window.innerWidth, window.innerHeight) < 520;
 const LOW_CPU_HINT = (navigator.hardwareConcurrency || 4) <= 4;
+const RENDER_QUALITY_SETTING = String(searchParams.get("quality") || searchParams.get("detail") || "").trim().toLowerCase();
+const FORCE_LOW_DETAIL = RENDER_QUALITY_SETTING === "low" || RENDER_QUALITY_SETTING === "lite" || searchParams.has("lowDetail");
+const FORCE_HIGH_DETAIL = RENDER_QUALITY_SETTING === "high" || RENDER_QUALITY_SETTING === "full";
 const SPACE_PERF_MODE = SPACE_LEVEL && !TEST_RUN && SPACE_3D_SETTING !== "high" && (TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT || SPACE_3D_SETTING === "low");
+const JUNGLE_PERF_MODE = JUNGLE_LEVEL && !FORCE_HIGH_DETAIL && (FORCE_LOW_DETAIL || TOUCH_DEVICE || SMALL_VIEWPORT || LOW_CPU_HINT);
+const ROUTE_PERF_MODE = SPACE_PERF_MODE || JUNGLE_PERF_MODE;
 const SPACE_3D_DISABLED = SPACE_LEVEL && (SPACE_3D_SETTING === "off" || SPACE_3D_SETTING === "0");
-const MAX_CANVAS_DPR = SPACE_PERF_MODE ? 1.15 : 2;
+const MAX_CANVAS_DPR = SPACE_PERF_MODE ? 1.15 : JUNGLE_PERF_MODE ? 1.25 : 2;
 const DEBUG_DATASET_INTERVAL_MS = TEST_RUN ? 0 : 180;
 const SPACE_STAR_COUNT = SPACE_PERF_MODE ? 62 : 140;
 const SPACE_GRID_ROWS = SPACE_PERF_MODE ? 10 : 18;
 const SPACE_RAY_SPAN = SPACE_PERF_MODE ? 4 : 7;
-const SPACE_STREAK_COUNT = SPACE_PERF_MODE ? 14 : 30;
-const SPACE_TUNNEL_DEPTH = SPACE_PERF_MODE ? 6 : 11;
-const SPACE_TUNNEL_ARROWS = SPACE_PERF_MODE ? 3 : 6;
+const SPEED_STREAK_COUNT = ROUTE_PERF_MODE ? 14 : 30;
+const ROUTE_TUNNEL_DEPTH = ROUTE_PERF_MODE ? 6 : 11;
+const ROUTE_TUNNEL_ARROWS = ROUTE_PERF_MODE ? 3 : 6;
+const JUNGLE_CANOPY_COUNT = JUNGLE_PERF_MODE ? 24 : 44;
+const JUNGLE_VINE_COUNT = JUNGLE_PERF_MODE ? 13 : 26;
+const JUNGLE_PARTICLE_COUNT = JUNGLE_PERF_MODE ? 32 : 70;
+const JUNGLE_DECOR_MARGIN = JUNGLE_PERF_MODE ? 70 : 120;
 const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
 const PLAYER_SPAWN_SIZE = 34;
 
@@ -1813,9 +1822,9 @@ function drawJungleBackground(section, beat) {
   ctx.fillRect(0, 0, viewW, viewH);
 
   ctx.save();
-  ctx.globalAlpha = 0.18 + beat * 0.05;
+  ctx.globalAlpha = JUNGLE_PERF_MODE ? 0.18 : 0.18 + beat * 0.05;
   ctx.fillStyle = "rgba(20, 83, 45, 0.72)";
-  for (let i = 0; i < 44; i++) {
+  for (let i = 0; i < JUNGLE_CANOPY_COUNT; i++) {
     const x = (baseX * 1.7 + i * 96) % (viewW + 180) - 90;
     const y = 34 + ((baseY + i * 43) % 290);
     ctx.beginPath();
@@ -1827,7 +1836,7 @@ function drawJungleBackground(section, beat) {
   ctx.strokeStyle = "#166534";
   ctx.lineWidth = 5;
   ctx.lineCap = "round";
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < JUNGLE_VINE_COUNT; i++) {
     const x = (baseX * 2.3 + i * 132) % (viewW + 240) - 120;
     const top = -30;
     const len = 190 + (i % 6) * 44;
@@ -1838,11 +1847,19 @@ function drawJungleBackground(section, beat) {
   }
 
   ctx.globalAlpha = 0.2;
-  for (let i = 0; i < 70; i++) {
+  for (let i = 0; i < JUNGLE_PARTICLE_COUNT; i++) {
     const x = (baseX * 2.8 + i * 83) % (viewW + 220) - 100;
     const y = (baseY * 1.5 + i * 59 + Math.sin(i) * 80) % (viewH + 180) - 50;
     ctx.fillStyle = i % 5 === 0 ? "#fb7185" : i % 5 === 1 ? "#facc15" : i % 5 === 2 ? "#14b8a6" : section.accent;
-    if (i % 3 === 0) {
+    if (JUNGLE_PERF_MODE) {
+      ctx.beginPath();
+      if (i % 3 === 0) {
+        ctx.arc(x, y, 4 + (i % 4), 0, Math.PI * 2);
+      } else {
+        ctx.ellipse(x, y, 13 + (i % 4) * 2, 5 + (i % 3), 0, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    } else if (i % 3 === 0) {
       ctx.beginPath();
       ctx.arc(x, y, 4 + (i % 4), 0, Math.PI * 2);
       ctx.fill();
@@ -1928,7 +1945,7 @@ function drawSpeedStreaks(section) {
   ctx.strokeStyle = mixHex(section.accent, "#ffffff", 0.16);
   ctx.lineWidth = 2.4 + intensity * 2.2;
   ctx.lineCap = "round";
-  for (let i = 0; i < SPACE_STREAK_COUNT; i++) {
+  for (let i = 0; i < SPEED_STREAK_COUNT; i++) {
     const x = (viewW - ((camera.x * 0.62 + state.time * 240 + i * 117) % (viewW + 240))) + 90;
     const y = ((camera.y * 0.05 + i * 49 + Math.sin(state.time * 2 + i) * 18) % (viewH + 110)) - 55;
     const len = 62 + intensity * 96 + (i % 3) * 18;
@@ -2039,7 +2056,7 @@ function drawRouteBand(band) {
   ctx.fillStyle = mixHex(band.color, "#ffffff", 0.38);
   ctx.strokeStyle = band.color;
   ctx.shadowColor = band.color;
-  ctx.shadowBlur = SPACE_PERF_MODE ? 0 : 18;
+  ctx.shadowBlur = ROUTE_PERF_MODE ? 0 : 18;
   ctx.lineWidth = 6;
   ctx.beginPath();
   ctx.roundRect(0, -thick / 2, length, thick, 12);
@@ -2075,7 +2092,7 @@ function drawRouteTunnel3d(band) {
   const nearHalf = band.h / 2;
   const farHalf = band.h * 0.16;
   const farY = band.vanishY ?? band.y;
-  const depth = SPACE_TUNNEL_DEPTH;
+  const depth = ROUTE_TUNNEL_DEPTH;
   const phase = (state.time * 0.42) % (1 / depth);
   const left = band.x;
   const right = band.x + band.w;
@@ -2102,7 +2119,7 @@ function drawRouteTunnel3d(band) {
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   ctx.shadowColor = band.color;
-  ctx.shadowBlur = SPACE_PERF_MODE ? 0 : 20;
+  ctx.shadowBlur = ROUTE_PERF_MODE ? 0 : 20;
   ctx.beginPath();
   ctx.moveTo(nearTop.x, nearTop.y);
   ctx.lineTo(farTop.x, farTop.y);
@@ -2154,8 +2171,8 @@ function drawRouteTunnel3d(band) {
   ctx.globalAlpha = 0.9;
   ctx.strokeStyle = colors.yellow;
   ctx.lineWidth = 7;
-  for (let i = 0; i < SPACE_TUNNEL_ARROWS; i++) {
-    const t = ((state.time * 0.24 + i / SPACE_TUNNEL_ARROWS) % 1);
+  for (let i = 0; i < ROUTE_TUNNEL_ARROWS; i++) {
+    const t = ((state.time * 0.24 + i / ROUTE_TUNNEL_ARROWS) % 1);
     const center = point(t, 0);
     const scale = 1 - t * 0.58;
     ctx.save();
@@ -2173,8 +2190,9 @@ function drawRouteTunnel3d(band) {
 
 function drawDecorations() {
   for (const d of level.decorations) {
-    if (!isVisible({ x: d.x, w: 60 }, 120)) continue;
-    const pulse = 1 + Math.sin(state.time * 4 + d.phase) * 0.08;
+    if (!isVisible({ x: d.x, w: 60 }, JUNGLE_LEVEL ? JUNGLE_DECOR_MARGIN : 120)) continue;
+    const staticJungleDecor = JUNGLE_PERF_MODE && (d.kind === "vine" || d.kind === "leaf" || d.kind === "flower" || d.kind === "root");
+    const pulse = staticJungleDecor ? 1 : 1 + Math.sin(state.time * 4 + d.phase) * 0.08;
     ctx.save();
     ctx.translate(d.x, d.y);
     ctx.scale((d.scale || 1) * pulse, (d.scale || 1) * pulse);
@@ -2333,14 +2351,23 @@ function drawDecorations() {
       ctx.bezierCurveTo(-18, -12, 20, 16, -4, 48);
       ctx.stroke();
       ctx.fillStyle = mixHex(d.color, "#bbf7d0", 0.24);
-      for (let i = -1; i <= 1; i++) {
-        ctx.save();
-        ctx.translate(i * 14, i * 18);
-        ctx.rotate(i * 0.8);
+      if (JUNGLE_PERF_MODE) {
         ctx.beginPath();
-        ctx.ellipse(0, 0, 13, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(-10, -2, 13, 6, 0.35, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
+        ctx.beginPath();
+        ctx.ellipse(12, 20, 13, 6, -0.45, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        for (let i = -1; i <= 1; i++) {
+          ctx.save();
+          ctx.translate(i * 14, i * 18);
+          ctx.rotate(i * 0.8);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 13, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
     }
     if (d.kind === "leaf") {
@@ -3436,7 +3463,13 @@ function debugSnapshot() {
     },
     perf: {
       spacePerfMode: SPACE_PERF_MODE,
+      junglePerfMode: JUNGLE_PERF_MODE,
+      routePerfMode: ROUTE_PERF_MODE,
       space3dDisabled: SPACE_3D_DISABLED,
+      renderQuality: RENDER_QUALITY_SETTING || "auto",
+      touchDevice: TOUCH_DEVICE,
+      smallViewport: SMALL_VIEWPORT,
+      lowCpuHint: LOW_CPU_HINT,
       maxCanvasDpr: MAX_CANVAS_DPR,
       dpr: Math.round(dpr * 100) / 100,
       debugDatasetIntervalMs: DEBUG_DATASET_INTERVAL_MS,
