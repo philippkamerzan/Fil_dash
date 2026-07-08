@@ -1,4 +1,4 @@
-import { level as level1 } from "./level.js?v=78";
+import { level as level1 } from "./level.js?v=79";
 import { level as level2 } from "./spaceLevel.js?v=8";
 import { level as level3 } from "./jungleLevel.js?v=47";
 import { level as level4 } from "./titanicLevel.js?v=54";

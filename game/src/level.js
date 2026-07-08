@@ -187,7 +187,7 @@ addPlatform(-120, 1120, 1100);
 addSpike(260, 1086, 34, 34, "up");
 addCeilingBite(320, 910, 72, 32, "#2d68ff");
 addSpikeRun(440, 1120, [1, 1], 190);
-addCeilingBite(610, 890, 96, 34, "#2d68ff");
+addCeilingBite(610, 860, 96, 34, "#2d68ff");
 addSpike(780, 1086, 34, 34, "up");
 addSpike(930, 1086, 30, 34, "up");
 addCeilingBite(995, 900, 88, 34, "#2d68ff");
@@ -209,19 +209,25 @@ addPlatform(930, 1120, 280);
 // Section 2: rhythmic spike groups and a down-dot drop cue.
 addPlatform(1190, 1120, 1050);
 addSpikeRun(1240, 1120, [1, 2, 1, 2], 190);
-addCeilingBite(1320, 900, 86, 34, "#22c7d7");
+addCeilingBite(1320, 860, 86, 34, "#22c7d7");
 addSpike(1478, 1086, 30, 34, "up");
-addCeilingBite(1690, 890, 112, 34, "#22c7d7");
+addPlatform(1560, 1010, 430, 40);
+addCeilingBite(1690, 1035, 112, 34, "#22c7d7");
 addPopupSpike(1745, 1086, 26, 34, "up", { popup: { triggerDistance: 250, extendDistance: 120 } });
+addSpike(1848, 976, 42, 34, "up");
 addPopupSpike(1900, 1086, 32, 34, "up", { popup: { triggerDistance: 340, extendDistance: 145 } });
-addCeilingBite(2015, 905, 96, 34, "#22c7d7");
+addCeilingBite(2015, 1025, 96, 34, "#22c7d7");
 addSpike(2185, 1086, 38, 34, "up");
+trampolines.push(trigger(1458, 1088, 82, 30, "trampoline", { vx: 386, vy: -610 }));
+trampolines.push(trigger(1942, 978, 78, 30, "trampoline", { vx: 404, vy: -520 }));
 addJump(1180);
 addJump(1398);
 addJump(1460);
 addJump(1590);
 addJump(1712);
+addJump(1760, 120);
 addJump(1812);
+addJump(1935, 130);
 addJump(2040);
 addJump(2145);
 addJump(2205, 110);
@@ -491,20 +497,65 @@ for (const marker of unreachableBaseSpikes) {
 }
 
 const densityCeilingSpikes = [
-  1085, 3482, 3714, 3946, 4178, 4885, 5335, 5570, 6198, 6587, 6813,
-  7455, 8181, 8461, 9000, 10078, 10487, 10678, 13178, 13610, 14195,
+  { x: 1085, y: 875, w: 74, shelf: true },
+  { x: 3482, y: 850, w: 82, shelf: true },
+  { x: 3714, y: 815, w: 64, mover: true },
+  { x: 3946, y: 860, w: 76, shelf: true },
+  { x: 4178, y: 820, w: 64, mover: true },
+  { x: 4885, y: 825, w: 82, shelf: true },
+  { x: 5335, y: 840, w: 68, mover: true },
+  { x: 5570, y: 870, w: 76, shelf: true },
+  { x: 6198, y: 825, w: 74, mover: true },
+  { x: 6587, y: 850, w: 70, shelf: true },
+  { x: 6813, y: 880, w: 78, shelf: true },
+  { x: 7455, y: 760, w: 68, mover: true },
+  { x: 8181, y: 820, w: 76, shelf: true },
+  { x: 8461, y: 910, w: 66, mover: true },
+  { x: 9000, y: 815, w: 78, shelf: true },
+  { x: 10078, y: 805, w: 70, mover: true },
+  { x: 10487, y: 835, w: 76, shelf: true },
+  { x: 10678, y: 930, w: 66, mover: true },
+  { x: 13178, y: 700, w: 78, shelf: true },
+  { x: 13610, y: 635, w: 70, mover: true },
+  { x: 14195, y: 720, w: 82, shelf: true },
 ];
 
-densityCeilingSpikes.forEach((sourceX, index) => {
+densityCeilingSpikes.forEach((spec, index) => {
+  const x = scaleCoord(spec.x);
+  const y = spec.y;
+  const w = spec.w;
+  if (spec.shelf) {
+    platforms.push({
+      x: x - 18,
+      y: y - 30,
+      w: w + 36,
+      h: 30,
+      kind: "decor",
+    });
+  }
   hazards.push({
-    x: scaleCoord(sourceX),
-    y: sourceX > 13000 ? 610 : index % 3 === 0 ? 650 : index % 3 === 1 ? 700 : 745,
-    w: index % 2 === 0 ? 72 : 58,
+    x,
+    y,
+    w,
     h: 24,
     dir: "down",
     kind: "spike",
     color: "#11131b",
   });
+  if (spec.mover) {
+    movers.push({
+      x: x - 18,
+      y: y - 88,
+      w: w + 36,
+      h: 28,
+      axis: "y",
+      amp: 74 + (index % 3) * 10,
+      speed: 1.1 + (index % 4) * 0.18,
+      phase: index * 0.72,
+      kind: "movingHazard",
+      color: index % 2 ? "#7c3aed" : "#2563eb",
+    });
+  }
 });
 
 export const level = {

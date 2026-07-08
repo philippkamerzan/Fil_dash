@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./level.js?v=78";
+import { level as baseLevel } from "./level.js?v=79";
 
 const clone = (value) => structuredClone(value);
 
