@@ -271,6 +271,18 @@ body.force-landscape .game-shell {
   text-shadow: 0 6px 0 rgba(0, 0, 0, 0.28);
 }
 
+body.test-mode .overlay {
+  gap: 10px;
+}
+
+body.test-mode .overlay-title {
+  font-size: clamp(30px, 6vw, 62px);
+}
+
+body.test-mode .results-panel {
+  display: none;
+}
+
 .level-picker {
   width: min(720px, calc(100vw - 28px));
   display: grid;
@@ -324,6 +336,99 @@ body.force-landscape .game-shell {
   border-color: rgba(255, 212, 77, 0.82);
   background: rgba(255, 212, 77, 0.18);
   box-shadow: 0 0 0 4px rgba(255, 212, 77, 0.12), 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+.test-mode-panel {
+  width: min(720px, calc(100vw - 28px));
+  display: grid;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.test-mode-panel.hidden {
+  display: none;
+}
+
+.test-mode-head {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 2px solid rgba(255, 212, 77, 0.32);
+  border-radius: 8px;
+  background: rgba(255, 212, 77, 0.12);
+  color: var(--text);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.test-mode-head b {
+  color: var(--sun);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.test-mode-head span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(246, 247, 251, 0.78);
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkpoint-picker {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.checkpoint-choice {
+  min-width: 0;
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(16, 19, 31, 0.72);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.checkpoint-choice b {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(34, 199, 215, 0.16);
+  color: #dffbff;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.checkpoint-choice span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(246, 247, 251, 0.84);
+  font-size: 11px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.checkpoint-choice.active {
+  border-color: rgba(34, 199, 215, 0.85);
+  background: rgba(34, 199, 215, 0.16);
+  box-shadow: 0 0 0 3px rgba(34, 199, 215, 0.12);
 }
 
 .results-panel {
@@ -787,6 +892,36 @@ body.force-landscape .level-picker {
   gap: 6px;
 }
 
+body.force-landscape .test-mode-panel {
+  width: min(620px, calc(100vw - 24px));
+  gap: 6px;
+}
+
+body.force-landscape .test-mode-head {
+  padding: 7px 9px;
+}
+
+body.force-landscape .checkpoint-picker {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+}
+
+body.force-landscape .checkpoint-choice {
+  min-height: 38px;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 5px;
+}
+
+body.force-landscape .checkpoint-choice b {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+body.force-landscape .checkpoint-choice span {
+  font-size: 10px;
+}
+
 body.force-landscape .level-choice {
   min-height: 42px;
   gap: 6px;
@@ -883,6 +1018,19 @@ body.force-landscape .primary-button {
 
   .level-picker {
     width: calc(100vw - 20px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .test-mode-panel {
+    width: calc(100vw - 20px);
+  }
+
+  .test-mode-head {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+
+  .checkpoint-picker {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

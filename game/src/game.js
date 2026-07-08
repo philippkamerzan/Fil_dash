@@ -9,6 +9,8 @@ const overlay = document.querySelector("#overlay");
 const pauseOverlay = document.querySelector("#pauseOverlay");
 const overlayTitle = overlay.querySelector(".overlay-title");
 const levelPickerEl = document.querySelector("#levelPicker");
+const testModePanelEl = document.querySelector("#testModePanel");
+const checkpointPickerEl = document.querySelector("#checkpointPicker");
 const startButton = document.querySelector("#startButton");
 const menuToggle = document.querySelector("#menuToggle");
 const pauseToggle = document.querySelector("#pauseToggle");
@@ -38,6 +40,8 @@ const JUNGLE_LEVEL = LEVEL_THEME === "jungle";
 const TITANIC_LEVEL = LEVEL_THEME === "titanic";
 const TEST_RUN = searchParams.has("testRun");
 const TEST_SECTION = searchParams.get("section") || "";
+const TEST_MODE = queryFlag("testMode") || String(searchParams.get("mode") || "").toLowerCase() === "test" || searchParams.has("checkpoint");
+const TEST_CHECKPOINT = searchParams.get("checkpoint") || searchParams.get("section") || "";
 const TEST_TIME_SCALE = Number(searchParams.get("timeScale")) || 1;
 const TEST_VARIANT = normalizeTestVariant(searchParams.get("variant"));
 const SPACE_3D_SETTING = String(searchParams.get("space3d") || "").trim().toLowerCase();
@@ -68,6 +72,9 @@ const SPACE_STREAK_COUNT = SPACE_PERF_MODE ? 14 : 30;
 const SPACE_TUNNEL_DEPTH = SPACE_PERF_MODE ? 6 : 11;
 const SPACE_TUNNEL_ARROWS = SPACE_PERF_MODE ? 3 : 6;
 const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
+const PLAYER_SPAWN_SIZE = 34;
+
+document.body.classList.toggle("test-mode", TEST_MODE);
 
 const keys = {
   jump: false,
@@ -113,9 +120,95 @@ const sectionSpawns = {
   mini: { x: scaleLevelX(12240), y: 866, mode: "cube", gravity: 1 },
   finish: { x: scaleLevelX(13220), y: 946, mode: "cube", gravity: 1 },
 };
+const TEST_CHECKPOINTS = buildTestCheckpoints();
+const ACTIVE_TEST_CHECKPOINT = resolveTestCheckpoint(TEST_CHECKPOINT || TEST_SECTION);
 
 function scaleLevelX(x) {
   return Math.round(x * LEVEL_SCALE);
+}
+
+function queryFlag(name) {
+  const value = String(searchParams.get(name) || "").trim().toLowerCase();
+  return searchParams.has(name) && value !== "0" && value !== "false" && value !== "off";
+}
+
+function buildTestCheckpoints() {
+  return level.sections.map((section, index) => ({
+    id: section.id || `checkpoint-${index + 1}`,
+    index,
+    name: section.name || `Checkpoint ${index + 1}`,
+    spawn: spawnForSection(section, index),
+  }));
+}
+
+function resolveTestCheckpoint(value) {
+  const requested = String(value || "").trim().toLowerCase();
+  if (!requested) return TEST_CHECKPOINTS[0] || null;
+  const bySection = TEST_CHECKPOINTS.find((checkpoint) =>
+    checkpoint.id.toLowerCase() === requested
+    || checkpoint.name.toLowerCase() === requested
+    || String(checkpoint.index + 1) === requested
+  );
+  if (bySection) return bySection;
+  const legacy = sectionSpawns[requested];
+  return legacy ? {
+    id: requested,
+    index: -1,
+    name: requested,
+    spawn: { ...legacy, checkpointId: requested },
+  } : TEST_CHECKPOINTS[0] || null;
+}
+
+function spawnForSection(section, index) {
+  const mode = index === 5 ? "plane" : "cube";
+  const gravity = index === 8 ? -1 : 1;
+  const x = checkpointSpawnX(section, gravity);
+  const y = checkpointSpawnY(x, section, mode, gravity);
+  return {
+    x,
+    y,
+    mode,
+    gravity,
+    checkpointId: section.id,
+    checkpointName: section.name,
+  };
+}
+
+function checkpointSpawnX(section, gravity) {
+  const sectionLeft = Math.max(WORLD.start.x, section.x + 54);
+  const sectionRight = Math.min(playableEndX - 150, section.x + section.w - 90);
+  const platforms = solidPlatformsInSection(section)
+    .filter((platform) => gravity === -1 ? platform.y + platform.h <= (section.lane || 760) + 220 : platform.y >= (section.lane || 900) - 220)
+    .sort((a, b) => Math.max(a.x, section.x) - Math.max(b.x, section.x));
+  const platform = platforms[0];
+  if (!platform) return clamp(section.x + 90, sectionLeft, Math.max(sectionLeft, sectionRight));
+  const insidePlatform = clamp(Math.max(platform.x + 62, sectionLeft), sectionLeft, Math.min(sectionRight, platform.x + platform.w - PLAYER_SPAWN_SIZE - 12));
+  return Number.isFinite(insidePlatform) ? insidePlatform : clamp(section.x + 90, sectionLeft, Math.max(sectionLeft, sectionRight));
+}
+
+function checkpointSpawnY(x, section, mode, gravity) {
+  if (mode === "plane") return section.lane ? section.lane - 20 : WORLD.start.y;
+  const support = solidPlatformAt(x, section, gravity);
+  if (support && gravity === -1) return support.y + support.h;
+  if (support) return support.y - PLAYER_SPAWN_SIZE;
+  const lane = Number.isFinite(section.lane) ? section.lane : WORLD.start.y + PLAYER_SPAWN_SIZE;
+  return gravity === -1 ? lane + 40 : lane - PLAYER_SPAWN_SIZE;
+}
+
+function solidPlatformsInSection(section) {
+  return level.platforms.filter((platform) =>
+    platform.kind !== "ghost-pass"
+    && platform.kind !== "decor"
+    && platform.x + platform.w > section.x + 4
+    && platform.x < section.x + section.w - 4
+  );
+}
+
+function solidPlatformAt(x, section, gravity) {
+  const platforms = solidPlatformsInSection(section)
+    .filter((platform) => x + PLAYER_SPAWN_SIZE > platform.x && x < platform.x + platform.w)
+    .sort((a, b) => gravity === -1 ? (b.y + b.h) - (a.y + a.h) : a.y - b.y);
+  return platforms[0] || null;
 }
 
 function levelProgress() {
@@ -379,6 +472,16 @@ function levelPickerName(item) {
 function levelHref(item) {
   const params = new URLSearchParams(window.location.search);
   params.set("level", String(item.number || item.id));
+  for (const key of ["testRun", "timeScale", "section", "checkpoint", "variant", "r"]) params.delete(key);
+  const query = params.toString();
+  return `${window.location.pathname}${query ? `?${query}` : ""}`;
+}
+
+function checkpointHref(checkpoint) {
+  const params = new URLSearchParams(window.location.search);
+  params.set("level", String(level.number || LEVEL_ID));
+  params.set("testMode", "1");
+  params.set("checkpoint", checkpoint.id);
   for (const key of ["testRun", "timeScale", "section", "variant", "r"]) params.delete(key);
   const query = params.toString();
   return `${window.location.pathname}${query ? `?${query}` : ""}`;
@@ -410,6 +513,38 @@ function setupLevelPicker() {
       window.location.assign(levelHref(item));
     });
     levelPickerEl.append(button);
+  }
+}
+
+function setupCheckpointPicker() {
+  if (!testModePanelEl || !checkpointPickerEl) return;
+  testModePanelEl.classList.toggle("hidden", !TEST_MODE);
+  checkpointPickerEl.replaceChildren();
+  if (!TEST_MODE) return;
+
+  for (const checkpoint of TEST_CHECKPOINTS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "checkpoint-choice";
+    button.classList.toggle("active", checkpoint.id === ACTIVE_TEST_CHECKPOINT?.id);
+    button.setAttribute("aria-pressed", String(checkpoint.id === ACTIVE_TEST_CHECKPOINT?.id));
+    button.dataset.checkpointId = checkpoint.id;
+
+    const code = document.createElement("b");
+    code.textContent = `C${checkpoint.index + 1}`;
+    const name = document.createElement("span");
+    name.textContent = checkpoint.name;
+    button.append(code, name);
+
+    button.addEventListener("click", () => {
+      if (checkpoint.id === ACTIVE_TEST_CHECKPOINT?.id) {
+        restartFromCheckpoint(false);
+        startGame();
+        return;
+      }
+      window.location.assign(checkpointHref(checkpoint));
+    });
+    checkpointPickerEl.append(button);
   }
 }
 
@@ -452,7 +587,7 @@ function localRank(record, records) {
 }
 
 function recordFinishResult() {
-  if (TEST_RUN) return;
+  if (TEST_RUN || TEST_MODE) return;
   const record = currentRunRecord();
   const previousBest = sortRecords(getLocalRecords())[0];
   const rewardCoins = rewardCoinsForNewRecord(record, previousBest);
@@ -691,8 +826,12 @@ function setMenuExpanded(expanded) {
   menuToggle?.setAttribute("aria-expanded", String(expanded));
 }
 
+function usesCheckpointSpawn() {
+  return TEST_MODE || (TEST_RUN && !!ACTIVE_TEST_CHECKPOINT);
+}
+
 function restartFromCheckpoint(countAttempt = true) {
-  const spawn = structuredClone(!countAttempt && TEST_RUN && TEST_SECTION ? state.checkpoint : WORLD.start);
+  const spawn = structuredClone(usesCheckpointSpawn() ? state.checkpoint : WORLD.start);
   player.x = spawn.x;
   player.y = spawn.y;
   player.vx = spawn.mode === "plane" ? 390 : 340;
@@ -763,7 +902,7 @@ function finish() {
   overlay.classList.remove("hidden");
   overlayTitle.textContent = "Финиш";
   startButton.textContent = "Еще раз";
-  state.checkpoint = structuredClone(WORLD.start);
+  state.checkpoint = structuredClone(usesCheckpointSpawn() ? ACTIVE_TEST_CHECKPOINT?.spawn || WORLD.start : WORLD.start);
 }
 
 function ensureAudio() {
@@ -1233,6 +1372,10 @@ function lerp(a, b, t) {
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
 function easeInOutCubic(t) {
@@ -3097,6 +3240,11 @@ function requestBrowserLandscapeLock() {
   }
 }
 
+function applyInitialCheckpoint() {
+  if (!usesCheckpointSpawn()) return;
+  state.checkpoint = structuredClone(ACTIVE_TEST_CHECKPOINT?.spawn || WORLD.start);
+}
+
 function debugSnapshot() {
   return {
     player: {
@@ -3133,6 +3281,8 @@ function debugSnapshot() {
       y: Math.round(state.checkpoint.y),
       mode: state.checkpoint.mode,
       gravity: state.checkpoint.gravity,
+      id: state.checkpoint.checkpointId || "",
+      name: state.checkpoint.checkpointName || "",
     },
     camera: {
       x: Math.round(camera.x),
@@ -3182,6 +3332,12 @@ function debugSnapshot() {
       variant: TEST_VARIANT,
       timeScale: TEST_TIME_SCALE,
       timeShiftMs: Math.round(TEST_VARIANT_TIME_SHIFT * 1000),
+    },
+    testMode: {
+      enabled: TEST_MODE,
+      checkpointId: ACTIVE_TEST_CHECKPOINT?.id || "",
+      checkpointName: ACTIVE_TEST_CHECKPOINT?.name || "",
+      checkpointCount: TEST_CHECKPOINTS.length,
     },
     economy: {
       coins: economy.coins,
@@ -3245,11 +3401,10 @@ document.title = level.title || "FIL Dash";
 if (levelNameEl) levelNameEl.textContent = level.shortTitle || `L${level.number || 1}`;
 overlayTitle.textContent = level.title || "FIL Dash";
 setupLevelPicker();
+setupCheckpointPicker();
 updateRecordsUi();
 if (!TEST_RUN) refreshGlobalLeaderboard();
-if (TEST_RUN && sectionSpawns[TEST_SECTION]) {
-  state.checkpoint = { ...structuredClone(sectionSpawns[TEST_SECTION]), xKey: sectionSpawns[TEST_SECTION].x };
-}
+applyInitialCheckpoint();
 restartFromCheckpoint(false);
 writeDebugDataset(true);
 updateHud();
