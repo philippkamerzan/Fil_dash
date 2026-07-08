@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=4";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=32";
 import { startSpace3dLayer } from "./space3d.js?v=1";
 
 const canvas = document.querySelector("#game");
@@ -8,6 +8,7 @@ const gameShell = document.querySelector(".game-shell");
 const overlay = document.querySelector("#overlay");
 const pauseOverlay = document.querySelector("#pauseOverlay");
 const overlayTitle = overlay.querySelector(".overlay-title");
+const levelPickerEl = document.querySelector("#levelPicker");
 const startButton = document.querySelector("#startButton");
 const pauseToggle = document.querySelector("#pauseToggle");
 const soundToggle = document.querySelector("#soundToggle");
@@ -28,6 +29,9 @@ const WORLD = level.world;
 const LEVEL_SCALE = level.scale;
 const LEVEL_ID = level.id;
 const SPACE_LEVEL = level.renderMode === "space3d";
+const LEVEL_THEME = level.theme || (SPACE_LEVEL ? "space" : "classic");
+const JUNGLE_LEVEL = LEVEL_THEME === "jungle";
+const TITANIC_LEVEL = LEVEL_THEME === "titanic";
 const TEST_RUN = searchParams.has("testRun");
 const TEST_SECTION = searchParams.get("section") || "";
 const TEST_TIME_SCALE = Number(searchParams.get("timeScale")) || 1;
@@ -205,6 +209,48 @@ function scoreForRecord(record) {
   const timePenalty = Math.round((record.time ?? 0) * 18);
   const attemptPenalty = (record.attempts ?? 0) * 1400;
   return Math.max(1, progressScore - timePenalty - attemptPenalty);
+}
+
+function levelPickerName(item) {
+  if (item.number === 1) return "Старт";
+  return String(item.title || item.slug || item.id)
+    .replace(/^FIL Dash\s*\d*:\s*/i, "")
+    .replace(/^FIL Dash\s*\d*$/i, "Старт")
+    .trim();
+}
+
+function levelHref(item) {
+  const params = new URLSearchParams(window.location.search);
+  params.set("level", String(item.number || item.id));
+  for (const key of ["testRun", "timeScale", "section", "r"]) params.delete(key);
+  const query = params.toString();
+  return `${window.location.pathname}${query ? `?${query}` : ""}`;
+}
+
+function setupLevelPicker() {
+  if (!levelPickerEl) return;
+  levelPickerEl.replaceChildren();
+  for (const item of levels) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "level-choice";
+    button.classList.toggle("active", item.id === LEVEL_ID);
+    button.setAttribute("aria-pressed", String(item.id === LEVEL_ID));
+    button.setAttribute("title", item.title || item.id);
+    button.dataset.levelId = item.id;
+
+    const code = document.createElement("b");
+    code.textContent = item.shortTitle || `L${item.number || ""}`;
+    const name = document.createElement("span");
+    name.textContent = levelPickerName(item);
+    button.append(code, name);
+
+    button.addEventListener("click", () => {
+      if (item.id === LEVEL_ID) return;
+      window.location.assign(levelHref(item));
+    });
+    levelPickerEl.append(button);
+  }
 }
 
 function playerId() {
@@ -1209,6 +1255,14 @@ function drawBackground() {
     drawSpaceBackground(section, beat);
     return;
   }
+  if (JUNGLE_LEVEL) {
+    drawJungleBackground(section, beat);
+    return;
+  }
+  if (TITANIC_LEVEL) {
+    drawTitanicBackground(section, beat);
+    return;
+  }
   const g = ctx.createLinearGradient(0, 0, viewW, viewH);
   g.addColorStop(0, mixHex(section.accent, "#fbf3e4", 0.68));
   g.addColorStop(0.48, mixHex(section.accent, "#f7f0e4", 0.9));
@@ -1321,6 +1375,122 @@ function drawSpaceBackground(section, beat) {
       ctx.stroke();
     }
   }
+  drawSpeedStreaks(section);
+  ctx.globalAlpha = 1;
+}
+
+function drawJungleBackground(section, beat) {
+  const baseX = -camera.x * 0.11;
+  const baseY = -camera.y * 0.06;
+  const g = ctx.createLinearGradient(0, 0, viewW, viewH);
+  g.addColorStop(0, mixHex(section.accent, "#d9f99d", 0.54));
+  g.addColorStop(0.48, mixHex(section.accent, "#ecfccb", 0.78));
+  g.addColorStop(1, mixHex("#0891b2", "#fef3c7", 0.72));
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, viewW, viewH);
+
+  ctx.save();
+  ctx.globalAlpha = 0.18 + beat * 0.05;
+  ctx.fillStyle = "rgba(20, 83, 45, 0.72)";
+  for (let i = 0; i < 44; i++) {
+    const x = (baseX * 1.7 + i * 96) % (viewW + 180) - 90;
+    const y = 34 + ((baseY + i * 43) % 290);
+    ctx.beginPath();
+    ctx.ellipse(x, y, 58 + (i % 4) * 18, 16 + (i % 3) * 8, -0.22 + (i % 5) * 0.08, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = "#166534";
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  for (let i = 0; i < 26; i++) {
+    const x = (baseX * 2.3 + i * 132) % (viewW + 240) - 120;
+    const top = -30;
+    const len = 190 + (i % 6) * 44;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.bezierCurveTo(x - 34, top + len * 0.34, x + 48, top + len * 0.7, x + 8, top + len);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.2;
+  for (let i = 0; i < 70; i++) {
+    const x = (baseX * 2.8 + i * 83) % (viewW + 220) - 100;
+    const y = (baseY * 1.5 + i * 59 + Math.sin(i) * 80) % (viewH + 180) - 50;
+    ctx.fillStyle = i % 5 === 0 ? "#fb7185" : i % 5 === 1 ? "#facc15" : i % 5 === 2 ? "#14b8a6" : section.accent;
+    if (i % 3 === 0) {
+      ctx.beginPath();
+      ctx.arc(x, y, 4 + (i % 4), 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((i % 7) * 0.24);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 18 + (i % 4) * 3, 6 + (i % 3), 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+  drawSpeedStreaks(section);
+  ctx.globalAlpha = 1;
+}
+
+function drawTitanicBackground(section, beat) {
+  const baseX = -camera.x * 0.08;
+  const baseY = -camera.y * 0.04;
+  const g = ctx.createLinearGradient(0, 0, viewW, viewH);
+  g.addColorStop(0, "#0f172a");
+  g.addColorStop(0.44, mixHex(section.accent, "#172554", 0.32));
+  g.addColorStop(1, "#0e7490");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, viewW, viewH);
+
+  ctx.save();
+  ctx.globalAlpha = 0.26 + beat * 0.04;
+  ctx.fillStyle = "#fbbf24";
+  for (let i = 0; i < 22; i++) {
+    const x = (baseX * 1.4 + i * 132) % (viewW + 220) - 90;
+    const y = 120 + ((baseY + i * 31) % 260);
+    ctx.beginPath();
+    ctx.roundRect(x, y, 44, 18, 8);
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = "#bae6fd";
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 18; i++) {
+    const y = viewH * 0.58 + ((baseY * 2 + i * 34) % (viewH * 0.42));
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x < viewW + 80; x += 80) {
+      ctx.quadraticCurveTo(x + 40, y - 18 - (i % 3) * 4, x + 80, y);
+    }
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.19;
+  ctx.strokeStyle = "#93c5fd";
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 40; i++) {
+    const x = (baseX * 2.2 + i * 97) % (viewW + 260) - 130;
+    const y = (baseY + i * 53) % (viewH + 220) - 80;
+    if (i % 4 === 0) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + 34);
+      ctx.lineTo(x + 24, y - 18);
+      ctx.lineTo(x + 52, y + 34);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(x, y, 18 + (i % 5) * 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
   drawSpeedStreaks(section);
   ctx.globalAlpha = 1;
 }
@@ -1731,6 +1901,132 @@ function drawDecorations() {
         ctx.stroke();
       }
     }
+    if (d.kind === "vine") {
+      ctx.strokeStyle = mixHex(d.color, "#14532d", 0.35);
+      ctx.lineWidth = 7;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(0, -42);
+      ctx.bezierCurveTo(-18, -12, 20, 16, -4, 48);
+      ctx.stroke();
+      ctx.fillStyle = mixHex(d.color, "#bbf7d0", 0.24);
+      for (let i = -1; i <= 1; i++) {
+        ctx.save();
+        ctx.translate(i * 14, i * 18);
+        ctx.rotate(i * 0.8);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 13, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    if (d.kind === "leaf") {
+      ctx.fillStyle = mixHex(d.color, "#dcfce7", 0.28);
+      ctx.strokeStyle = mixHex(d.color, "#14532d", 0.18);
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 32, 12, -0.34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#166534";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-24, 3);
+      ctx.lineTo(24, -3);
+      ctx.stroke();
+    }
+    if (d.kind === "flower") {
+      ctx.fillStyle = mixHex(d.color, "#ffffff", 0.12);
+      for (let i = 0; i < 6; i++) {
+        const a = i * Math.PI / 3;
+        ctx.beginPath();
+        ctx.ellipse(Math.cos(a) * 12, Math.sin(a) * 12, 9, 5, a, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = colors.yellow;
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (d.kind === "root") {
+      ctx.strokeStyle = mixHex(d.color, "#422006", 0.5);
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-34, 14);
+      ctx.quadraticCurveTo(-12, -18, 8, 6);
+      ctx.quadraticCurveTo(24, 24, 42, -6);
+      ctx.stroke();
+    }
+    if (d.kind === "porthole") {
+      ctx.fillStyle = "rgba(251, 191, 36, 0.32)";
+      ctx.strokeStyle = mixHex(d.color, "#0f172a", 0.26);
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#fde68a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-15, 0);
+      ctx.lineTo(15, 0);
+      ctx.moveTo(0, -15);
+      ctx.lineTo(0, 15);
+      ctx.stroke();
+    }
+    if (d.kind === "wave") {
+      ctx.strokeStyle = mixHex(d.color, "#e0f2fe", 0.22);
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-38, 8);
+      for (let x = -38; x <= 42; x += 20) {
+        ctx.quadraticCurveTo(x + 10, -12, x + 20, 8);
+      }
+      ctx.stroke();
+    }
+    if (d.kind === "steam") {
+      ctx.strokeStyle = "rgba(226, 232, 240, 0.82)";
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * 13, 28);
+        ctx.bezierCurveTo(i * 7 - 10, 6, i * 16 + 16, -8, i * 8, -34);
+        ctx.stroke();
+      }
+    }
+    if (d.kind === "iceShard") {
+      ctx.fillStyle = "rgba(219, 234, 254, 0.55)";
+      ctx.strokeStyle = "#7dd3fc";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-10, 26);
+      ctx.lineTo(0, -30);
+      ctx.lineTo(17, 22);
+      ctx.lineTo(4, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    if (d.kind === "rope") {
+      ctx.strokeStyle = mixHex(d.color, "#78350f", 0.4);
+      ctx.lineWidth = 6;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(-36, -18);
+      ctx.quadraticCurveTo(-8, 18, 32, -10);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#fde68a";
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * 14 - 4, -8);
+        ctx.lineTo(i * 14 + 8, 8);
+        ctx.stroke();
+      }
+    }
     ctx.restore();
   }
 }
@@ -1740,6 +2036,14 @@ function drawPlatforms() {
     if (!isVisible(p)) continue;
     if (SPACE_LEVEL && !p.kind.startsWith("ghost")) {
       drawSpacePlatform(p);
+      continue;
+    }
+    if (JUNGLE_LEVEL && !p.kind.startsWith("ghost")) {
+      drawJunglePlatform(p);
+      continue;
+    }
+    if (TITANIC_LEVEL && !p.kind.startsWith("ghost")) {
+      drawTitanicPlatform(p);
       continue;
     }
     ctx.save();
@@ -1794,6 +2098,85 @@ function drawSpacePlatform(p) {
   ctx.moveTo(p.x + 8, p.y + 8);
   ctx.lineTo(p.x + p.w - 8, p.y + 8);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawJunglePlatform(p) {
+  ctx.save();
+  const glow = state.currentSection?.accent || "#22c55e";
+  const top = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+  top.addColorStop(0, "#fef3c7");
+  top.addColorStop(0.42, "#d9f99d");
+  top.addColorStop(1, "#854d0e");
+  ctx.fillStyle = top;
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.roundRect(p.x, p.y, p.w, p.h, 5);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.75;
+  ctx.strokeStyle = mixHex(glow, "#14532d", 0.48);
+  ctx.lineWidth = 3;
+  for (let x = p.x + 18; x < p.x + p.w - 18; x += 44) {
+    ctx.beginPath();
+    ctx.moveTo(x, p.y + p.h - 11);
+    ctx.quadraticCurveTo(x + 14, p.y + p.h - 23, x + 32, p.y + p.h - 12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x + 8, p.y + 9);
+    ctx.lineTo(x + 30, p.y + 9);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = "#166534";
+  for (let x = p.x + 24; x < p.x + p.w - 10; x += 76) {
+    ctx.beginPath();
+    ctx.ellipse(x, p.y - 3, 18, 6, -0.25, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawTitanicPlatform(p) {
+  ctx.save();
+  const glow = state.currentSection?.accent || "#38bdf8";
+  const top = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.h);
+  top.addColorStop(0, "#f8fafc");
+  top.addColorStop(0.5, "#cbd5e1");
+  top.addColorStop(1, "#7c2d12");
+  ctx.fillStyle = top;
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  ctx.roundRect(p.x, p.y, p.w, p.h, 5);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.globalAlpha = 0.66;
+  ctx.strokeStyle = mixHex(glow, "#ffffff", 0.18);
+  ctx.lineWidth = 3;
+  for (let x = p.x + 20; x < p.x + p.w - 14; x += 54) {
+    ctx.beginPath();
+    ctx.moveTo(x, p.y + 9);
+    ctx.lineTo(x + 30, p.y + 9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 16, p.y + p.h - 12, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.44;
+  ctx.strokeStyle = "#bae6fd";
+  ctx.lineWidth = 2;
+  for (let x = p.x + 10; x < p.x + p.w - 20; x += 82) {
+    ctx.beginPath();
+    ctx.moveTo(x, p.y + p.h + 8);
+    ctx.quadraticCurveTo(x + 34, p.y + p.h - 4, x + 68, p.y + p.h + 8);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -2105,13 +2488,13 @@ function drawMouths() {
   for (const m of level.mouths) {
     if (!isVisible({ x: m.x, y: m.top, w: 90, h: m.bottom - m.top })) continue;
     const { top, bottom, progress } = mouthRects(m);
-    drawMouthBlock(top.x, top.y, top.w, top.h, "down", progress);
-    drawMouthBlock(bottom.x, bottom.y, bottom.w, bottom.h, "up", progress);
+    drawMouthBlock(top.x, top.y, top.w, top.h, "down", progress, m.color);
+    drawMouthBlock(bottom.x, bottom.y, bottom.w, bottom.h, "up", progress, m.color);
   }
 }
 
-function drawMouthBlock(x, y, w, h, dir, progress = 0) {
-  ctx.fillStyle = colors.green;
+function drawMouthBlock(x, y, w, h, dir, progress = 0, color = colors.green) {
+  ctx.fillStyle = color;
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 6;
   ctx.beginPath();
@@ -2138,15 +2521,16 @@ function drawMovers() {
   for (const m of level.movers) {
     if (!isVisible({ x: m.x - m.amp - 20, y: m.y - m.amp - 20, w: m.w + m.amp * 2 + 40, h: m.h + m.amp * 2 + 40 })) continue;
     const r = movingRect(m);
+    const moverColor = m.color || colors.pink;
     ctx.save();
     ctx.globalAlpha = 0.22;
-    ctx.strokeStyle = colors.pink;
+    ctx.strokeStyle = moverColor;
     ctx.setLineDash([8, 10]);
     ctx.lineWidth = 3;
     ctx.strokeRect(m.axis === "x" ? m.x - m.amp : m.x, m.axis === "y" ? m.y - m.amp : m.y, m.axis === "x" ? m.w + m.amp * 2 : m.w, m.axis === "y" ? m.h + m.amp * 2 : m.h);
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
-    ctx.fillStyle = colors.pink;
+    ctx.fillStyle = moverColor;
     ctx.strokeStyle = colors.ink;
     ctx.lineWidth = 6;
     ctx.beginPath();
@@ -2577,6 +2961,7 @@ initTelegram();
 document.title = level.title || "FIL Dash";
 if (levelNameEl) levelNameEl.textContent = level.shortTitle || `L${level.number || 1}`;
 overlayTitle.textContent = level.title || "FIL Dash";
+setupLevelPicker();
 updateRecordsUi();
 if (!TEST_RUN) refreshGlobalLeaderboard();
 if (TEST_RUN && sectionSpawns[TEST_SECTION]) {

@@ -25,6 +25,8 @@ Levels:
 - the current full route is registered as `level-1` / `FIL Dash 1`;
 - open a specific level with `?level=1` or `?level=level-1`;
 - the 3D space route is registered as `level-2` / `FIL Dash 2: Space Run`;
+- the jungle route is registered as `level-3` / `FIL Dash 3: Джунгли`;
+- the Titanic route is registered as `level-4` / `FIL Dash 4: Титаник`;
 - add future levels as new modules and register them in `src\levels.js`;
 - local and shared leaderboard records are scoped by `levelId`, so new levels do not mix scores with Level 1.
 

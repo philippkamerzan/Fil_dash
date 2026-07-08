@@ -271,6 +271,61 @@ body.force-landscape .game-shell {
   text-shadow: 0 6px 0 rgba(0, 0, 0, 0.28);
 }
 
+.level-picker {
+  width: min(720px, calc(100vw - 28px));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.level-choice {
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(16, 19, 31, 0.72);
+  color: var(--text);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.level-choice b {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 34px;
+  margin-left: 6px;
+  border-radius: 7px;
+  background: rgba(255, 212, 77, 0.16);
+  color: var(--sun);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.level-choice span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(246, 247, 251, 0.88);
+  font-size: 13px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.level-choice.active {
+  border-color: rgba(255, 212, 77, 0.82);
+  background: rgba(255, 212, 77, 0.18);
+  box-shadow: 0 0 0 4px rgba(255, 212, 77, 0.12), 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
 .results-panel {
   width: min(720px, calc(100vw - 28px));
   max-height: min(58vh, 430px);
@@ -506,6 +561,27 @@ body.force-landscape .game-shell {
     font-size: clamp(32px, 14vh, 58px);
   }
 
+  .level-picker {
+    width: min(620px, calc(100vw - 24px));
+    gap: 6px;
+  }
+
+  .level-choice {
+    min-height: 42px;
+    gap: 6px;
+  }
+
+  .level-choice b {
+    width: 32px;
+    height: 30px;
+    margin-left: 5px;
+    font-size: 12px;
+  }
+
+  .level-choice span {
+    font-size: 12px;
+  }
+
   .results-panel {
     width: min(620px, calc(100vw - 24px));
     max-height: 46vh;
@@ -608,6 +684,27 @@ body.force-landscape .overlay-title {
   font-size: clamp(32px, 14vh, 58px);
 }
 
+body.force-landscape .level-picker {
+  width: min(620px, calc(100vw - 24px));
+  gap: 6px;
+}
+
+body.force-landscape .level-choice {
+  min-height: 42px;
+  gap: 6px;
+}
+
+body.force-landscape .level-choice b {
+  width: 32px;
+  height: 30px;
+  margin-left: 5px;
+  font-size: 12px;
+}
+
+body.force-landscape .level-choice span {
+  font-size: 12px;
+}
+
 body.force-landscape .results-panel {
   width: min(620px, calc(100vw - 24px));
   max-height: 46vh;
@@ -663,6 +760,11 @@ body.force-landscape .primary-button {
   .results-panel {
     width: calc(100vw - 20px);
     max-height: 58vh;
+  }
+
+  .level-picker {
+    width: calc(100vw - 20px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .leaderboards {
