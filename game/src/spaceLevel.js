@@ -445,8 +445,23 @@ function buildCompleteSpaceRunMap() {
     [10840, 750, 114], [12480, 875, 92], [13680, 805, 108],
     [14520, 815, 94],
   ];
+  const descendingCeilingTriplets = new Map([
+    [8330, { y: 858, h: 34, hiddenOffset: 118, triggerDistance: 430, extendDistance: 270 }],
+  ]);
   for (const [x, y, w] of ceilingHazards) {
-    level.hazards.push(ceilingSpike(x, y, w, 28, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 230 }) } : {}));
+    const descending = descendingCeilingTriplets.get(x);
+    if (descending) {
+      level.hazards.push(ceilingSpike(x, descending.y, w, descending.h, {
+        popup: popup({
+          hiddenOffset: descending.hiddenOffset,
+          triggerDistance: descending.triggerDistance,
+          extendDistance: descending.extendDistance,
+          warningColor: "#38bdf8",
+        }),
+      }));
+    } else {
+      level.hazards.push(ceilingSpike(x, y, w, 28, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 230 }) } : {}));
+    }
   }
 
   const densityCeilings = [

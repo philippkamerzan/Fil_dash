@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=59";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=60";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
