@@ -673,6 +673,12 @@ function buildCompleteTitanicMap() {
     jump(13060, 240),
   );
 
+  level.hazards = level.hazards.filter((hazard) => {
+    const sourceX = hazard.x / level.scale;
+    const inPipeCeiling = sourceX >= 8580 && sourceX <= 10060;
+    return !inPipeCeiling;
+  });
+
   level.platforms.push(
     platform(9000, 620, 1120),
     platform(10040, 1080, 420),
@@ -686,11 +692,22 @@ function buildCompleteTitanicMap() {
     }),
   );
   level.hazards.push(
+    ceilingSpike(9085, 666, 66, 30, { color: "#e0f2fe", popup: popup({ hiddenOffset: 18, triggerDistance: 215 }) }),
     ceilingSpike(9250, 666, 76, 30, { color: "#dbeafe" }),
-    ceilingSpike(9560, 666, 70, 30, { color: "#bfdbfe", popup: popup({ hiddenOffset: 18, triggerDistance: 220 }) }),
-    ceilingSpike(9820, 666, 76, 30, { color: "#dbeafe" }),
+    ceilingSpike(9395, 666, 62, 30, { color: "#bfdbfe", popup: popup({ hiddenOffset: 18, triggerDistance: 215 }) }),
+    ceilingSpike(9608, 666, 42, 24, { color: "#dbeafe", popup: popup({ hiddenOffset: 18, triggerDistance: 184, extendDistance: 92, warningColor: "#c4b5fd" }) }),
+    ceilingSpike(9735, 666, 66, 30, { color: "#e0f2fe" }),
+    ceilingSpike(9960, 666, 70, 30, { color: "#bfdbfe", popup: popup({ hiddenOffset: 18, triggerDistance: 215 }) }),
   );
-  level.testActions.push(jump(9160, 178), jump(9480, 178), jump(9740, 178));
+  level.testActions.push(
+    jump(9025, 170),
+    jump(9160, 178),
+    jump(9325, 168),
+    jump(9545, 132),
+    jump(9650, 168),
+    jump(9740, 178),
+    jump(9880, 168),
+  );
 
   const bands = [
     [60, 1200, 1370, 86, "horizontal", "#38bdf8", { label: "new-lower-deck" }],
