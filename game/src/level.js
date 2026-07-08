@@ -87,6 +87,12 @@ function addSpikeRun(startX, baseY, groups, gap = 58, spikeW = 34) {
   }
 }
 
+function addCeilingBite(x, railY, w, h = 34, accent = "#2d68ff") {
+  addPlatform(x - 18, railY - 28, w + 36, 28, "decor");
+  addSpike(x, railY, w, h, "down");
+  addDecor(x + w / 2, railY - 52, "spark", accent, { phase: x * 0.01, scale: 0.5 });
+}
+
 function addJump(x, w = 78) {
   testActions.push({ x, w, kind: "jump" });
 }
@@ -170,14 +176,19 @@ addRouteBand(14040, 850, 520, 76, "diagonal", "#34d399", { dy: 150, label: "diag
 // Section 1: acceleration on the lower floor.
 addPlatform(-120, 1120, 1100);
 addSpike(260, 1086, 34, 34, "up");
+addCeilingBite(320, 910, 72, 32, "#2d68ff");
 addSpikeRun(440, 1120, [1, 1], 190);
+addCeilingBite(610, 890, 96, 34, "#2d68ff");
 addSpike(780, 1086, 34, 34, "up");
+addSpike(930, 1086, 30, 34, "up");
+addCeilingBite(995, 900, 88, 34, "#2d68ff");
 addSpike(1048, 1086, 34, 34, "up");
 addSpike(1164, 1086, 30, 34, "up");
 addJump(150);
 addJump(292);
 addJump(518);
 addJump(742);
+addJump(902);
 addJump(1000);
 addJump(1135);
 boosters.push(trigger(825, 1057, 66, 66, "blueBoost", { power: 760 }));
@@ -187,10 +198,15 @@ addPlatform(930, 1120, 280);
 // Section 2: rhythmic spike groups and a down-dot drop cue.
 addPlatform(1190, 1120, 1050);
 addSpikeRun(1240, 1120, [1, 2, 1, 2], 190);
+addCeilingBite(1320, 900, 86, 34, "#22c7d7");
+addSpike(1478, 1086, 30, 34, "up");
+addCeilingBite(1690, 890, 112, 34, "#22c7d7");
 addPopupSpike(1900, 1086, 32, 34, "up", { popup: { triggerDistance: 340, extendDistance: 145 } });
+addCeilingBite(2015, 905, 96, 34, "#22c7d7");
 addSpike(2185, 1086, 38, 34, "up");
 addJump(1180);
 addJump(1398);
+addJump(1460);
 addJump(1590);
 addJump(1812);
 addJump(2040);
@@ -200,10 +216,14 @@ downDots.push(trigger(2055, 820, 96, 130, "downImpulse", { power: 760 }));
 
 // Section 3: bad jump trap that throws the player into visible spikes.
 addPlatform(2240, 1120, 840);
+addCeilingBite(2295, 910, 82, 32, "#ff4d6d");
 traps.push(trigger(2440, 998, 46, 48, "badJump"));
+addPopupSpike(2545, 1086, 30, 34, "up", { popup: { triggerDistance: 260, extendDistance: 125 } });
 addSpike(2670, 1086, 90, 34, "up");
+addCeilingBite(2740, 890, 104, 34, "#ff4d6d");
 addSpike(2915, 1086, 54, 34, "up");
 addSpike(2360, 1086, 52, 34, "up");
+addJump(2505);
 addJump(2825);
 speedZones.push(trigger(2860, 1016, 94, 130, "slow", { speed: 338 }));
 

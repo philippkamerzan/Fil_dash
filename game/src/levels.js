@@ -1,5 +1,5 @@
-import { level as level1 } from "./level.js?v=64";
-import { level as level2 } from "./spaceLevel.js?v=1";
+import { level as level1 } from "./level.js?v=65";
+import { level as level2 } from "./spaceLevel.js?v=2";
 
 export const levels = [
   level1,
