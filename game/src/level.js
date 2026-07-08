@@ -87,6 +87,17 @@ function addPopupSpike(x, topY, w, h = 34, dir = "up", extra = {}) {
   });
 }
 
+function falling(extra = {}) {
+  return {
+    triggerDistance: 520,
+    armDistance: 260,
+    fallDistance: 170,
+    activeAt: 0.3,
+    warningColor: "#20c5d6",
+    ...extra,
+  };
+}
+
 function addSpikeRun(startX, baseY, groups, gap = 58, spikeW = 34) {
   let x = startX;
   for (const count of groups) {
@@ -498,6 +509,7 @@ for (const marker of unreachableBaseSpikes) {
 
 const densityCeilingSpikes = [
   { x: 1085, y: 875, w: 74, shelf: true },
+  { x: 1540, y: 958, w: 86, shelf: true, falling: falling({ warningColor: "#22c7d7" }) },
   { x: 3482, y: 850, w: 82, shelf: true },
   { x: 3714, y: 815, w: 64, mover: true },
   { x: 3946, y: 860, w: 76, shelf: true },
@@ -508,16 +520,19 @@ const densityCeilingSpikes = [
   { x: 6198, y: 825, w: 74, mover: true },
   { x: 6587, y: 850, w: 70, shelf: true },
   { x: 6813, y: 880, w: 78, shelf: true },
+  { x: 7230, y: 955, w: 92, shelf: true, falling: falling({ warningColor: "#34d399", triggerDistance: 560 }) },
   { x: 7455, y: 760, w: 68, mover: true },
   { x: 8181, y: 820, w: 76, shelf: true },
   { x: 8461, y: 910, w: 66, mover: true },
   { x: 9000, y: 815, w: 78, shelf: true },
-  { x: 10078, y: 805, w: 70, mover: true },
+  { x: 10078, y: 835, w: 70, mover: true },
   { x: 10487, y: 835, w: 76, shelf: true },
-  { x: 10678, y: 930, w: 66, mover: true },
+  { x: 10678, y: 995, w: 66, mover: true },
+  { x: 11610, y: 925, w: 88, shelf: true, falling: falling({ warningColor: "#9b7cff", fallDistance: 190 }) },
   { x: 13178, y: 700, w: 78, shelf: true },
   { x: 13610, y: 635, w: 70, mover: true },
   { x: 14195, y: 720, w: 82, shelf: true },
+  { x: 14580, y: 835, w: 92, shelf: true, falling: falling({ warningColor: "#ffd84d", triggerDistance: 540 }) },
 ];
 
 densityCeilingSpikes.forEach((spec, index) => {
@@ -541,6 +556,7 @@ densityCeilingSpikes.forEach((spec, index) => {
     dir: "down",
     kind: "spike",
     color: "#11131b",
+    ...(spec.falling ? { falling: spec.falling } : {}),
   });
   if (spec.mover) {
     movers.push({

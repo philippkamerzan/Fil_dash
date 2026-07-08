@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./level.js?v=79";
+import { level as baseLevel } from "./level.js?v=80";
 
 const clone = (value) => structuredClone(value);
 const scaleX = (x) => Math.round(x * baseLevel.scale);
@@ -36,6 +36,17 @@ function popup(extra = {}) {
     extendDistance: 132,
     hiddenOffset: extra.hiddenOffset ?? 34,
     warningColor: extra.warningColor ?? "#fb7185",
+    ...extra,
+  };
+}
+
+function falling(extra = {}) {
+  return {
+    triggerDistance: 520,
+    armDistance: 252,
+    fallDistance: 178,
+    activeAt: 0.3,
+    warningColor: "#7dd3fc",
     ...extra,
   };
 }
@@ -512,8 +523,24 @@ function buildCompleteTitanicMap() {
     [9280, 960, 98], [10420, 820, 112], [11960, 930, 96],
     [13420, 865, 112], [14260, 870, 104],
   ];
+  const fallingCeilingHazards = new Map([
+    [500, { y: 1042, h: 30, warningColor: "#67e8f9" }],
+    [2240, { y: 980, h: 30, warningColor: "#fb7185", triggerDistance: 540 }],
+    [6420, { y: 1015, h: 30, warningColor: "#60a5fa", fallDistance: 190 }],
+    [9280, { y: 1010, h: 30, warningColor: "#a78bfa" }],
+    [11960, { y: 995, h: 30, warningColor: "#38bdf8", triggerDistance: 540 }],
+    [14260, { y: 1035, h: 30, warningColor: "#7dd3fc" }],
+  ]);
   for (const [x, y, w] of ceilingHazards) {
-    level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
+    const fallingSpec = fallingCeilingHazards.get(x);
+    if (fallingSpec) {
+      const { y: fallY = y, h = 30, ...fallingOptions } = fallingSpec;
+      level.hazards.push(ceilingSpike(x, fallY, w, h, {
+        falling: falling(fallingOptions),
+      }));
+    } else {
+      level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
+    }
   }
 
   const densityCeilings = [
@@ -521,8 +548,13 @@ function buildCompleteTitanicMap() {
     8300, 8893, 9087, 9660, 9920, 10890, 11360, 11560, 12120,
     12430, 13845, 14457, 14653,
   ];
+  const fallingDensityCeilings = new Set([2410, 9087, 12120]);
   densityCeilings.forEach((x, index) => {
-    level.hazards.push(ceilingSpike(x, index % 3 === 0 ? 700 : index % 3 === 1 ? 745 : 790, index % 2 ? 60 : 76, 24));
+    const y = index % 3 === 0 ? 700 : index % 3 === 1 ? 745 : 790;
+    const extra = fallingDensityCeilings.has(x)
+      ? { falling: falling({ fallDistance: 150, triggerDistance: 500, armDistance: 238, warningColor: "#bfdbfe" }) }
+      : {};
+    level.hazards.push(ceilingSpike(x, y, index % 2 ? 60 : 76, 24, extra));
   });
 
   level.yellowZones.push({
@@ -551,9 +583,9 @@ function buildCompleteTitanicMap() {
   level.hazards.push(
     ceilingSpike(5120, 770, scaleW(1540), 34, { color: "#dbeafe" }),
     floorSpike(5120, 1238, scaleW(1540), 38, { scaleWidth: true, color: "#dbeafe" }),
-    ceilingSpike(5480, 890, 110, 32, { color: "#bfdbfe" }),
+    ceilingSpike(5480, 900, 110, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#bfdbfe", fallDistance: 160, triggerDistance: 530 }) }),
     floorSpike(5740, 1130, 96, 36, { color: "#bfdbfe" }),
-    ceilingSpike(6090, 860, 128, 32, { popup: popup({ hiddenOffset: 24, triggerDistance: 255 }), color: "#bfdbfe" }),
+    ceilingSpike(6090, 885, 128, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#60a5fa", fallDistance: 170, triggerDistance: 545, armDistance: 250 }) }),
     floorSpike(6380, 1144, 92, 36, { popup: popup({ triggerDistance: 245 }), color: "#bfdbfe" }),
   );
   level.movers.push(

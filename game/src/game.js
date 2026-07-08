@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=67";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=68";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -956,6 +956,8 @@ function playerHazardRect() {
 }
 
 function spikeHitRect(h) {
+  const fall = fallingSpikeProgress(h);
+  if (h.falling && fall < (h.falling.activeAt ?? 0.3)) return { x: h.x, y: h.y, w: 0, h: 0 };
   const pop = spikePopProgress(h);
   if (h.popup && pop < 0.48) return { x: h.x, y: h.y, w: 0, h: 0 };
   const spikeRect = animatedSpikeRect(h);
@@ -977,7 +979,27 @@ function spikePopProgress(h) {
   return clamp01((player.x + player.w - leadX) / extendDistance);
 }
 
+function fallingSpikeProgress(h) {
+  if (!h.falling) return 1;
+  const triggerDistance = h.falling.triggerDistance ?? 520;
+  const armDistance = h.falling.armDistance ?? h.falling.extendDistance ?? 260;
+  const leadX = h.x - triggerDistance;
+  return clamp01((player.x + player.w - leadX) / armDistance);
+}
+
+function fallingSpikeDistance(h) {
+  return h.falling?.fallDistance ?? Math.max(120, h.h * 4);
+}
+
 function animatedSpikeRect(h) {
+  if (h.falling) {
+    const fall = easeInOutCubic(fallingSpikeProgress(h));
+    const shift = fallingSpikeDistance(h) * (1 - fall);
+    return {
+      ...h,
+      y: h.dir === "down" ? h.y - shift : h.y + shift,
+    };
+  }
   if (!h.popup) return h;
   const pop = spikePopProgress(h);
   const hiddenOffset = h.popup.hiddenOffset ?? h.h;
@@ -3086,13 +3108,15 @@ function drawHazards() {
 function drawSpikeStrip(h) {
   const spikeRect = animatedSpikeRect(h);
   const pop = spikePopProgress(h);
+  const fall = fallingSpikeProgress(h);
   const count = Math.max(1, Math.floor(spikeRect.w / 24));
   const step = spikeRect.w / count;
   ctx.save();
+  if (h.falling) drawFallingSpikeWarning(h, spikeRect, fall);
   if (h.popup) drawPopupSpikeWarning(h, pop);
   ctx.fillStyle = h.color || (SPACE_LEVEL ? "#e2e8f0" : colors.ink);
   ctx.strokeStyle = h.color || (SPACE_LEVEL ? "#050816" : colors.ink);
-  ctx.globalAlpha = h.popup ? 0.46 + pop * 0.54 : 1;
+  ctx.globalAlpha = h.popup ? 0.46 + pop * 0.54 : h.falling ? 0.62 + fall * 0.38 : 1;
   ctx.beginPath();
   for (let i = 0; i < count; i++) {
     const x = spikeRect.x + i * step;
@@ -3107,6 +3131,34 @@ function drawSpikeStrip(h) {
     }
   }
   ctx.fill();
+  ctx.restore();
+}
+
+function drawFallingSpikeWarning(h, spikeRect, fall) {
+  if (h.dir !== "down") return;
+  const color = h.falling.warningColor || colors.cyan;
+  const drop = fallingSpikeDistance(h);
+  const startY = h.y - drop;
+  const endY = h.y + h.h;
+  const centerX = h.x + h.w / 2;
+  const pulse = 0.5 + Math.sin(state.time * 12 + h.x * 0.01) * 0.5;
+  ctx.save();
+  ctx.globalAlpha = 0.22 + pulse * 0.18 + fall * 0.2;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8 + fall * 12;
+  ctx.lineWidth = 3;
+  ctx.setLineDash([10, 10]);
+  ctx.beginPath();
+  ctx.moveTo(centerX, startY + h.h * 0.55);
+  ctx.lineTo(centerX, endY + 18);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 0.28 + pulse * 0.22 + fall * 0.22;
+  ctx.fillRect(h.x + 6, h.y - 5, Math.max(6, h.w - 12), 7);
+  ctx.globalAlpha = 0.18 + fall * 0.28;
+  ctx.fillRect(spikeRect.x + 5, spikeRect.y - 6, Math.max(6, spikeRect.w - 10), 5);
   ctx.restore();
 }
 
@@ -4156,6 +4208,7 @@ function debugSnapshot() {
       playableEndX,
       sections: level.sections.length,
       hazards: level.hazards.length,
+      fallingSpikes: level.hazards.filter((hazard) => hazard.falling).length,
       platforms: level.platforms.length,
       routeBands: level.routeBands?.length ?? 0,
       decorations: level.decorations.length,

@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./level.js?v=79";
+import { level as baseLevel } from "./level.js?v=80";
 
 const clone = (value) => structuredClone(value);
 
@@ -40,6 +40,17 @@ function popup(extra = {}) {
     extendDistance: 142,
     hiddenOffset: extra.hiddenOffset ?? 34,
     warningColor: extra.warningColor ?? "#7dd3fc",
+    ...extra,
+  };
+}
+
+function falling(extra = {}) {
+  return {
+    triggerDistance: 540,
+    armDistance: 270,
+    fallDistance: 190,
+    activeAt: 0.3,
+    warningColor: "#38bdf8",
     ...extra,
   };
 }
@@ -445,31 +456,36 @@ function buildCompleteSpaceRunMap() {
     [10840, 750, 114], [12480, 875, 92], [13680, 805, 108],
     [14520, 815, 94],
   ];
-  const descendingCeilingTriplets = new Map([
-    [8330, { y: 858, h: 34, hiddenOffset: 118, triggerDistance: 430, extendDistance: 270 }],
+  const fallingCeilingHazards = new Map([
+    [650, { y: 968, h: 30, warningColor: "#38bdf8" }],
+    [2380, { y: 960, h: 30, warningColor: "#f43f5e", triggerDistance: 520 }],
+    [8330, { y: 880, h: 34, warningColor: "#38bdf8", triggerDistance: 565, fallDistance: 205 }],
+    [10840, { y: 900, h: 30, warningColor: "#a78bfa" }],
+    [13680, { y: 940, h: 30, warningColor: "#fde047", triggerDistance: 560 }],
   ]);
   for (const [x, y, w] of ceilingHazards) {
-    const descending = descendingCeilingTriplets.get(x);
-    if (descending) {
-      level.hazards.push(ceilingSpike(x, descending.y, w, descending.h, {
-        popup: popup({
-          hiddenOffset: descending.hiddenOffset,
-          triggerDistance: descending.triggerDistance,
-          extendDistance: descending.extendDistance,
-          warningColor: "#38bdf8",
-        }),
+    const fallingSpec = fallingCeilingHazards.get(x);
+    if (fallingSpec) {
+      const { y: fallY = y, h = 30, ...fallingOptions } = fallingSpec;
+      level.hazards.push(ceilingSpike(x, fallY, w, h, {
+        falling: falling(fallingOptions),
       }));
-    } else {
-      level.hazards.push(ceilingSpike(x, y, w, 28, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 230 }) } : {}));
+      continue;
     }
+    level.hazards.push(ceilingSpike(x, y, w, 28, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 230 }) } : {}));
   }
 
   const densityCeilings = [
     957, 1960, 2533, 2862, 5115, 5742, 6545, 7927, 8128, 8935,
     9515, 9967, 10213, 10650, 11160, 11400, 11790, 12310, 12950, 14100, 14770,
   ];
+  const fallingDensityCeilings = new Set([2533, 7927, 12950]);
   densityCeilings.forEach((x, index) => {
-    level.hazards.push(ceilingSpike(x, index % 3 === 0 ? 640 : index % 3 === 1 ? 690 : 735, index % 2 ? 58 : 72, 24));
+    const y = index % 3 === 0 ? 640 : index % 3 === 1 ? 690 : 735;
+    const extra = fallingDensityCeilings.has(x)
+      ? { falling: falling({ fallDistance: 150, triggerDistance: 500, armDistance: 240, warningColor: "#60a5fa" }) }
+      : {};
+    level.hazards.push(ceilingSpike(x, y, index % 2 ? 58 : 72, 24, extra));
   });
 
   level.yellowZones.push({

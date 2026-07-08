@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./level.js?v=79";
+import { level as baseLevel } from "./level.js?v=80";
 
 const clone = (value) => structuredClone(value);
 const scaleX = (x) => Math.round(x * baseLevel.scale);
@@ -36,6 +36,17 @@ function popup(extra = {}) {
     extendDistance: 138,
     hiddenOffset: extra.hiddenOffset ?? 34,
     warningColor: extra.warningColor ?? "#f59e0b",
+    ...extra,
+  };
+}
+
+function falling(extra = {}) {
+  return {
+    triggerDistance: 525,
+    armDistance: 255,
+    fallDistance: 180,
+    activeAt: 0.3,
+    warningColor: "#f59e0b",
     ...extra,
   };
 }
@@ -515,16 +526,37 @@ function buildCompleteJungleMap() {
     [9240, 940, 88], [10380, 790, 112], [11860, 910, 94],
     [13320, 840, 108], [14220, 845, 100],
   ];
+  const fallingCeilingHazards = new Map([
+    [540, { y: 1005, h: 30, warningColor: "#84cc16" }],
+    [2280, { y: 960, h: 30, warningColor: "#f97316", triggerDistance: 545 }],
+    [6480, { y: 1010, h: 30, warningColor: "#06b6d4", fallDistance: 195 }],
+    [9240, { y: 1000, h: 30, warningColor: "#a855f7" }],
+    [11860, { y: 976, h: 30, warningColor: "#38bdf8", triggerDistance: 545 }],
+    [14220, { y: 1020, h: 30, warningColor: "#4ade80" }],
+  ]);
   for (const [x, y, w] of ceilingHazards) {
-    level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
+    const fallingSpec = fallingCeilingHazards.get(x);
+    if (fallingSpec) {
+      const { y: fallY = y, h = 30, ...fallingOptions } = fallingSpec;
+      level.hazards.push(ceilingSpike(x, fallY, w, h, {
+        falling: falling(fallingOptions),
+      }));
+    } else {
+      level.hazards.push(ceilingSpike(x, y, w, 30, x > 10000 ? { popup: popup({ hiddenOffset: 24, triggerDistance: 220 }) } : {}));
+    }
   }
 
   const densityCeilings = [
     1550, 1930, 2500, 2930, 4700, 5495, 5937, 6123, 7715, 8340,
     8995, 9610, 9880, 10835, 11293, 11487, 12480, 13695, 14470, 14930,
   ];
+  const fallingDensityCeilings = new Set([2500, 8995, 12480]);
   densityCeilings.forEach((x, index) => {
-    level.hazards.push(ceilingSpike(x, index % 3 === 0 ? 680 : index % 3 === 1 ? 730 : 775, index % 2 ? 60 : 74, 24));
+    const y = index % 3 === 0 ? 680 : index % 3 === 1 ? 730 : 775;
+    const extra = fallingDensityCeilings.has(x)
+      ? { falling: falling({ fallDistance: 150, triggerDistance: 500, armDistance: 238, warningColor: "#22c55e" }) }
+      : {};
+    level.hazards.push(ceilingSpike(x, y, index % 2 ? 60 : 74, 24, extra));
   });
 
   level.yellowZones.push({

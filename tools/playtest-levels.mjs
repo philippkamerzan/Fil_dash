@@ -464,6 +464,8 @@ function runLevel(level, variant) {
   }
 
   function spikeHitRect(h) {
+    const fall = fallingSpikeProgress(h);
+    if (h.falling && fall < (h.falling.activeAt ?? 0.3)) return { x: h.x, y: h.y, w: 0, h: 0 };
     const pop = spikePopProgress(h);
     if (h.popup && pop < 0.48) return { x: h.x, y: h.y, w: 0, h: 0 };
     const spikeRect = animatedSpikeRect(h);
@@ -485,7 +487,24 @@ function runLevel(level, variant) {
     return clamp01((player.x + player.w - leadX) / extendDistance);
   }
 
+  function fallingSpikeProgress(h) {
+    if (!h.falling) return 1;
+    const triggerDistance = h.falling.triggerDistance ?? 520;
+    const armDistance = h.falling.armDistance ?? h.falling.extendDistance ?? 260;
+    const leadX = h.x - triggerDistance;
+    return clamp01((player.x + player.w - leadX) / armDistance);
+  }
+
+  function fallingSpikeDistance(h) {
+    return h.falling?.fallDistance ?? Math.max(120, h.h * 4);
+  }
+
   function animatedSpikeRect(h) {
+    if (h.falling) {
+      const fall = easeInOutCubic(fallingSpikeProgress(h));
+      const shift = fallingSpikeDistance(h) * (1 - fall);
+      return { ...h, y: h.dir === "down" ? h.y - shift : h.y + shift };
+    }
     if (!h.popup) return h;
     const pop = spikePopProgress(h);
     const hiddenOffset = h.popup.hiddenOffset ?? h.h;
