@@ -436,8 +436,8 @@ function cameraLowerRunSurfaceY(compact, lowViewport, ceilingRun) {
   if (!Number.isFinite(sectionLane) || sectionLane < 760) return null;
   const surfaceY = Math.max(sectionLane, player.y + player.h);
   const laneScreenRatio = compact
-    ? (lowViewport ? 0.82 : 0.76)
-    : 0.72;
+    ? (lowViewport ? 0.88 : 0.82)
+    : 0.79;
   return surfaceY - viewH * laneScreenRatio;
 }
 
