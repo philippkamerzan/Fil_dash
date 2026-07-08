@@ -254,6 +254,6 @@ level.testActions = [
   jump(7000), jump(7240), jump(7560), jump(7830), hold(8690, 160),
   hold(9040, 160), hold(9380, 160), hold(9780, 150), jump(9870), jump(10255),
   jump(10945), jump(11240), jump(11535), jump(11840), jump(12340),
-  jump(12570), jump(12780), jump(12990), jump(13190), jump(13390), jump(13555),
+  jump(12570), jump(12780), jump(12885), jump(12990), jump(13190), jump(13390), jump(13555),
   hold(13690, 450), jump(14140), jump(14200), jump(14545), jump(14760), jump(14925), jump(14980),
 ].sort((a, b) => a.x - b.x);

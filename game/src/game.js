@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=35";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=36";
 import { startSpace3dLayer } from "./space3d.js?v=1";
 
 const canvas = document.querySelector("#game");
@@ -2817,27 +2817,44 @@ soundToggle.addEventListener("click", () => {
 function initTelegram() {
   const tg = window.Telegram?.WebApp;
   if (!tg) return;
-  tg.ready();
+  callTelegramMethod(tg, "ready");
   requestTelegramGameViewport();
-  try {
-    tg.setHeaderColor("#10131f");
-    tg.setBackgroundColor("#10131f");
-  } catch {
-    // Older Telegram WebApp runtimes do not support all chrome-color methods.
-  }
+  callTelegramMethod(tg, "setHeaderColor", "6.1", "#10131f");
+  callTelegramMethod(tg, "setBackgroundColor", "6.1", "#10131f");
 }
 
 function requestTelegramGameViewport() {
   const tg = window.Telegram?.WebApp;
   if (!tg) return;
-  try {
-    tg.expand();
-    tg.requestFullscreen?.();
-    tg.disableVerticalSwipes?.();
-    if (window.innerWidth > window.innerHeight) tg.lockOrientation?.();
-  } catch {
-    // Telegram clients expose these methods by version; CSS fallback handles the rest.
+  callTelegramMethod(tg, "expand");
+  callTelegramMethod(tg, "requestFullscreen", "8.0");
+  callTelegramMethod(tg, "disableVerticalSwipes", "7.7");
+  if (window.innerWidth > window.innerHeight) callTelegramMethod(tg, "lockOrientation", "8.0");
+}
+
+function callTelegramMethod(tg, method, minVersion, ...args) {
+  if (typeof minVersion !== "string") {
+    args = minVersion == null ? args : [minVersion, ...args];
+    minVersion = "";
   }
+  if (typeof tg?.[method] !== "function") return;
+  if (minVersion && !telegramVersionAtLeast(tg, minVersion)) return;
+  try {
+    tg[method](...args);
+  } catch {
+    // Telegram clients expose these methods by version; CSS fallback handles viewport/chrome.
+  }
+}
+
+function telegramVersionAtLeast(tg, version) {
+  if (typeof tg?.isVersionAtLeast === "function") {
+    try {
+      return tg.isVersionAtLeast(version);
+    } catch {
+      return false;
+    }
+  }
+  return true;
 }
 
 function requestBrowserLandscapeLock() {
