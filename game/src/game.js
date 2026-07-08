@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=66";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=67";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -3480,6 +3480,10 @@ function drawPlayer() {
 
 function drawPlaneTrailDot(t, planeSkin, index) {
   const alpha = ctx.globalAlpha;
+  if (TITANIC_LEVEL) {
+    drawBathyscapheBubble(t, index, alpha);
+    return;
+  }
   const pulse = 0.75 + Math.sin(state.time * 9 + index * 0.7) * 0.2;
   const size = 4.5 + (index % 3) * 1.6;
   ctx.save();
@@ -3524,9 +3528,106 @@ function drawPlane() {
   ctx.translate(cx, cy);
   ctx.rotate(player.angle);
   ctx.scale(player.portalScale, player.portalScale);
+  if (TITANIC_LEVEL) {
+    drawBathyscaphe(planeSkin);
+    ctx.restore();
+    return;
+  }
   drawPlaneFlame(planeSkin);
   drawPlaneBody(planeSkin);
   drawPlaneCockpit(planeSkin.model);
+  ctx.restore();
+}
+
+function drawBathyscapheBubble(t, index, alpha) {
+  const wobble = Math.sin(state.time * 8 + index * 0.9);
+  const size = 4 + (index % 4) * 1.7;
+  ctx.save();
+  ctx.globalAlpha = alpha * (0.55 + Math.max(0, wobble) * 0.24);
+  ctx.strokeStyle = index % 2 ? "#bae6fd" : "#7dd3fc";
+  ctx.fillStyle = "rgba(224, 242, 254, 0.18)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(t.x + wobble * 3, t.y - (index % 3) * 3, size, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawBathyscaphe(planeSkin) {
+  const pulse = 0.78 + Math.sin(state.time * 17) * 0.18;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  ctx.strokeStyle = "#082f49";
+  ctx.lineWidth = 4;
+  for (let i = -1; i <= 1; i += 1) {
+    ctx.strokeStyle = i === 0 ? "#67e8f9" : "rgba(186, 230, 253, 0.8)";
+    ctx.beginPath();
+    ctx.moveTo(-24, i * 7);
+    ctx.quadraticCurveTo(-36 - pulse * 9, i * 9, -47 - pulse * 4, i * 5);
+    ctx.stroke();
+  }
+
+  const hull = ctx.createLinearGradient(-24, -18, 28, 18);
+  hull.addColorStop(0, "#fef3c7");
+  hull.addColorStop(0.5, planeSkin.model === "gold" ? "#facc15" : "#f59e0b");
+  hull.addColorStop(1, "#0ea5e9");
+  ctx.fillStyle = hull;
+  ctx.strokeStyle = colors.ink;
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 30, 17, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#fbbf24";
+  ctx.strokeStyle = colors.ink;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(22, -10);
+  ctx.lineTo(38, 0);
+  ctx.lineTo(22, 10);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#e0f2fe";
+  ctx.strokeStyle = "#082f49";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(-4, -2, 10, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = "rgba(14, 165, 233, 0.58)";
+  ctx.beginPath();
+  ctx.arc(-4, -2, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#111827";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-21, 13);
+  ctx.lineTo(-14, 23);
+  ctx.moveTo(14, 13);
+  ctx.lineTo(22, 23);
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(-30, 0);
+  ctx.rotate(state.time * 12);
+  ctx.strokeStyle = "#f8fafc";
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 3; i += 1) {
+    ctx.rotate((Math.PI * 2) / 3);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-12, 0);
+    ctx.stroke();
+  }
+  ctx.restore();
+
   ctx.restore();
 }
 
@@ -3827,6 +3928,13 @@ function planeTargetY(x) {
     if (x < scaleLevelX(6150)) return 995;
     if (x < scaleLevelX(6500)) return 1110;
     return 1040;
+  }
+  if (level.number === 4) {
+    if (x < scaleLevelX(5480)) return 1030;
+    if (x < scaleLevelX(5800)) return 950;
+    if (x < scaleLevelX(6120)) return 1065;
+    if (x < scaleLevelX(6460)) return 955;
+    return 1045;
   }
   if (x < scaleLevelX(5520)) return 990;
   if (x < scaleLevelX(5900)) return 1010;

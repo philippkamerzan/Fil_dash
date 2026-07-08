@@ -542,6 +542,25 @@ function buildCompleteTitanicMap() {
   );
   level.testActions.push(hold(2940, 1460));
 
+  level.boosters.push(trigger(4920, 850, 120, 380, "portalDown", {
+    target: { x: scaleX(5140), y: 1008, mode: "plane", gravity: 1 },
+  }));
+  level.portals.push(trigger(6620, 930, 116, 250, "planeOut", {
+    target: { x: scaleX(6900), y: 1076, mode: "cube", gravity: 1 },
+  }));
+  level.hazards.push(
+    ceilingSpike(5120, 770, scaleW(1540), 34, { color: "#dbeafe" }),
+    floorSpike(5120, 1238, scaleW(1540), 38, { scaleWidth: true, color: "#dbeafe" }),
+    ceilingSpike(5480, 890, 110, 32, { color: "#bfdbfe" }),
+    floorSpike(5740, 1130, 96, 36, { color: "#bfdbfe" }),
+    ceilingSpike(6090, 860, 128, 32, { popup: popup({ hiddenOffset: 24, triggerDistance: 255 }), color: "#bfdbfe" }),
+    floorSpike(6380, 1144, 92, 36, { popup: popup({ triggerDistance: 245 }), color: "#bfdbfe" }),
+  );
+  level.movers.push(
+    mover(5900, 960, 50, 60, "y", 66, 2.35, 1.2, "#38bdf8"),
+    mover(6320, 915, 54, 58, "y", 58, 2.55, 2.4, "#fbbf24"),
+  );
+
   level.orbs.push(
     trigger(1180, 1015, 46, 46, "jumpOrb", { power: 590, color: "#7dd3fc" }),
     trigger(7100, 965, 46, 46, "jumpOrb", { power: 615, color: "#fbbf24" }),
@@ -564,6 +583,7 @@ function buildCompleteTitanicMap() {
     [60, 1200, 1370, 86, "horizontal", "#38bdf8", { label: "new-lower-deck" }],
     [1040, 1200, 930, 320, "tunnel3d", "#67e8f9", { vanishY: 710, label: "new-ice-tilt" }],
     [2920, 1500, 855, 350, "tunnel3d", "#facc15", { vanishY: 705, label: "new-searchlight-flight" }],
+    [5060, 1640, 980, 150, "horizontal", "#60a5fa", { label: "bathyscaphe-plane-channel" }],
     [5400, 1520, 1305, 82, "horizontal", "#60a5fa", { label: "new-flooded-lowline" }],
     [6820, 1180, 955, 82, "diagonal", "#22d3ee", { dy: -220, label: "new-deck-lift" }],
     [9900, 1180, 775, 88, "horizontal", "#a78bfa", { label: "new-upper-pipes" }],
