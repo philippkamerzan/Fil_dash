@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=72";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=74";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -3293,13 +3293,25 @@ function drawTitanicPlatform(p) {
   ctx.globalAlpha = 0.66;
   ctx.strokeStyle = mixHex(glow, "#ffffff", 0.18);
   ctx.lineWidth = 3;
-  for (let x = p.x + 20; x < p.x + p.w - 14; x += 54) {
+  for (let x = p.x + 18; x < p.x + p.w - 14; x += 38) {
     ctx.beginPath();
     ctx.moveTo(x, p.y + 9);
     ctx.lineTo(x + 30, p.y + 9);
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(x + 16, p.y + p.h - 12, 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.globalAlpha = 0.48;
+  ctx.strokeStyle = mixHex(glow, "#e0f2fe", 0.24);
+  ctx.lineWidth = 2;
+  for (let x = p.x + 34; x < p.x + p.w - 18; x += 76) {
+    ctx.beginPath();
+    ctx.arc(x, p.y + 22, 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + 28, p.y + p.h - 18, 3.5, 0, Math.PI * 2);
     ctx.stroke();
   }
 

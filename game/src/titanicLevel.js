@@ -552,10 +552,10 @@ function buildCompleteTitanicMap() {
 
   const ceilingHazards = [
     [500, 975, 100], [1030, 930, 92], [2240, 900, 104],
-    [3300, 790, 98], [4210, 890, 102], [5180, 890, 104],
-    [6420, 900, 96], [7380, 840, 100], [7900, 835, 104],
-    [9280, 960, 98], [10420, 820, 112], [11960, 930, 96],
-    [13420, 865, 112], [14260, 870, 104],
+    [3300, 850, 98], [4210, 920, 102], [5180, 920, 104],
+    [6420, 900, 96], [7380, 890, 100], [7900, 890, 104],
+    [9280, 960, 98], [10420, 875, 112], [11960, 930, 96],
+    [13420, 920, 112], [14260, 930, 104],
   ];
   const fallingCeilingHazards = new Map([
     [500, { y: 1042, h: 30, warningColor: "#67e8f9" }],
@@ -582,11 +582,11 @@ function buildCompleteTitanicMap() {
     8300, 8893, 9087, 9660, 9920, 10890, 11360, 11560, 12120,
     12430, 13845, 14457, 14653,
   ];
-  const fallingDensityCeilings = new Set([2410, 9087, 12120]);
+  const fallingDensityCeilings = new Set([1450, 2410, 5450, 9087, 10890, 12120, 14457]);
   densityCeilings.forEach((x, index) => {
-    const y = index % 3 === 0 ? 700 : index % 3 === 1 ? 745 : 790;
+    const y = index % 3 === 0 ? 815 : index % 3 === 1 ? 860 : 905;
     const extra = fallingDensityCeilings.has(x)
-      ? { falling: falling({ fallDistance: 150, triggerDistance: 500, armDistance: 238, warningColor: "#bfdbfe" }) }
+      ? { falling: falling({ fallDistance: 170, triggerDistance: 500, armDistance: 238, warningColor: "#bfdbfe" }) }
       : {};
     level.hazards.push(ceilingSpike(x, y, index % 2 ? 60 : 76, 24, extra));
   });
@@ -601,8 +601,8 @@ function buildCompleteTitanicMap() {
     minSpeed: 468,
   });
   level.hazards.push(
-    ceilingSpike(3120, 735, 126, 34),
-    ceilingSpike(3690, 735, 126, 34),
+    ceilingSpike(3120, 805, 126, 34),
+    ceilingSpike(3690, 805, 126, 34),
     floorSpike(3400, 1176, 90, 34, { scaleWidth: true }),
     floorSpike(3980, 1176, 90, 34, { scaleWidth: true }),
   );
@@ -615,7 +615,7 @@ function buildCompleteTitanicMap() {
     target: { x: scaleX(6900), y: 1076, mode: "cube", gravity: 1 },
   }));
   level.hazards.push(
-    ceilingSpike(5120, 770, scaleW(1540), 34, { color: "#dbeafe" }),
+    ceilingSpike(5120, 800, scaleW(1540), 34, { color: "#dbeafe" }),
     floorSpike(5120, 1238, scaleW(1540), 38, { scaleWidth: true, color: "#dbeafe" }),
     ceilingSpike(5480, 900, 110, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#bfdbfe", fallDistance: 160, triggerDistance: 530 }) }),
     floorSpike(5740, 1130, 96, 36, { color: "#bfdbfe" }),

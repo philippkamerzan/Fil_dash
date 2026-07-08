@@ -421,13 +421,13 @@ function addSpaceFlightSetpiece() {
     target: { x: scaleX(6900), y: 1006, mode: "cube", gravity: 1 },
   }));
   level.hazards.push(
-    ceilingSpike(5120, 805, scaleW(1540), 34, { color: "#dbeafe" }),
+    ceilingSpike(5120, 812, scaleW(1540), 34, { color: "#dbeafe" }),
     floorSpike(5120, 1210, scaleW(1540), 38, { scaleWidth: true, color: "#dbeafe" }),
-    ceilingSpike(5320, 832, 82, 28, { color: "#bfdbfe", falling: falling({ warningColor: "#38bdf8", fallDistance: 120, triggerDistance: 500 }) }),
-    ceilingSpike(5480, 900, 110, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#38bdf8", fallDistance: 160, triggerDistance: 530 }) }),
-    ceilingSpike(5660, 832, 76, 26, { color: "#dbeafe" }),
+    ceilingSpike(5320, 870, 82, 28, { color: "#bfdbfe", falling: falling({ warningColor: "#38bdf8", fallDistance: 120, triggerDistance: 500 }) }),
+    ceilingSpike(5480, 930, 110, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#38bdf8", fallDistance: 160, triggerDistance: 530 }) }),
+    ceilingSpike(5660, 872, 76, 26, { color: "#dbeafe" }),
     floorSpike(5980, 1142, 88, 36, { color: "#bfdbfe" }),
-    ceilingSpike(6260, 920, 112, 30, { color: "#bfdbfe", falling: falling({ warningColor: "#60a5fa", fallDistance: 165, triggerDistance: 545 }) }),
+    ceilingSpike(6260, 948, 112, 30, { color: "#bfdbfe", falling: falling({ warningColor: "#60a5fa", fallDistance: 165, triggerDistance: 545 }) }),
   );
   level.mouths.push(
     { x: scaleX(5580), top: 820, bottom: 1205, gapY: 928, gapH: 212, color: "#38bdf8" },
@@ -501,11 +501,11 @@ function buildCompleteSpaceRunMap() {
   }
 
   const ceilingHazards = [
-    [650, 890, 90], [1780, 820, 112], [2380, 910, 82],
-    [3860, 835, 102], [4870, 810, 88], [6170, 905, 92],
-    [7560, 795, 84], [8330, 785, 92], [9310, 900, 96],
-    [10840, 750, 114], [12480, 875, 92], [13680, 805, 108],
-    [14520, 815, 94],
+    [650, 890, 90], [1780, 895, 112], [2380, 910, 82],
+    [3860, 880, 102], [4870, 875, 88], [6170, 905, 92],
+    [7560, 860, 84], [8330, 785, 92], [9310, 932, 96],
+    [10840, 750, 114], [12480, 930, 92], [13680, 805, 108],
+    [14520, 930, 94],
   ];
   const fallingCeilingHazards = new Map([
     [650, { y: 968, h: 30, warningColor: "#38bdf8" }],
@@ -530,11 +530,11 @@ function buildCompleteSpaceRunMap() {
     957, 1960, 2533, 2862, 5115, 5742, 6545, 7927, 8128, 8935,
     9515, 9967, 10213, 10650, 11160, 11400, 11790, 12310, 12950, 14100, 14770,
   ];
-  const fallingDensityCeilings = new Set([2533, 7927, 12950]);
+  const fallingDensityCeilings = new Set([1960, 2533, 5742, 7927, 9515, 12950, 14770]);
   densityCeilings.forEach((x, index) => {
-    const y = index % 3 === 0 ? 640 : index % 3 === 1 ? 690 : 735;
+    const y = index % 3 === 0 ? 805 : index % 3 === 1 ? 850 : 890;
     const extra = fallingDensityCeilings.has(x)
-      ? { falling: falling({ fallDistance: 150, triggerDistance: 500, armDistance: 240, warningColor: "#60a5fa" }) }
+      ? { falling: falling({ fallDistance: 170, triggerDistance: 500, armDistance: 240, warningColor: "#60a5fa" }) }
       : {};
     level.hazards.push(ceilingSpike(x, y, index % 2 ? 58 : 72, 24, extra));
   });
@@ -549,8 +549,8 @@ function buildCompleteSpaceRunMap() {
     minSpeed: 456,
   });
   level.hazards.push(
-    ceilingSpike(3200, 700, 118, 34),
-    ceilingSpike(3620, 700, 118, 34),
+    ceilingSpike(3200, 760, 118, 34),
+    ceilingSpike(3620, 760, 118, 34),
     floorSpike(3460, 1086, 86, 34, { scaleWidth: true }),
     floorSpike(3980, 1086, 86, 34, { scaleWidth: true }),
   );
@@ -598,3 +598,27 @@ function buildCompleteSpaceRunMap() {
 }
 
 buildCompleteSpaceRunMap();
+
+function addDenseOrbitCircles() {
+  const extraRings = [];
+  const palette = ["#38bdf8", "#60a5fa", "#818cf8", "#22d3ee", "#facc15", "#34d399"];
+  for (let x = 190, i = 0; x < baseLevel.baseWidth - 120; x += 245, i++) {
+    const color = palette[i % palette.length];
+    extraRings.push(decor(x, 160 + ((i * 173) % 790), "ringPlanet", color, {
+      phase: i * 0.33,
+      scale: 0.68 + (i % 4) * 0.12,
+      alpha: 0.48 + (i % 3) * 0.08,
+    }));
+  }
+  for (let x = 330, i = 0; x < baseLevel.baseWidth - 160; x += 360, i++) {
+    const color = palette[(i + 2) % palette.length];
+    extraRings.push(decor(x, 915 + ((i * 97) % 260), "ringPlanet", color, {
+      phase: i * 0.47,
+      scale: 0.5 + (i % 3) * 0.1,
+      alpha: 0.38 + (i % 2) * 0.08,
+    }));
+  }
+  level.decorations.push(...extraRings);
+}
+
+addDenseOrbitCircles();
