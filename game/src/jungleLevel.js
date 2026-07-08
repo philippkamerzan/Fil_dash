@@ -269,13 +269,13 @@ const sectionLayout = [
   { id: "root-gate", name: "Root Gate", x: 0, lane: 1190, accent: "#22c55e" },
   { id: "canopy-hop", name: "Canopy Hop", x: 560, lane: 1190, accent: "#84cc16" },
   { id: "thorn-steps", name: "Thorn Steps", x: 1320, lane: 1118, accent: "#f97316" },
-  { id: "vine-hold", name: "Vine Hold", x: 2360, lane: 870, accent: "#facc15" },
+  { id: "vine-hold", name: "3D Vine Hold", x: 2360, lane: 870, accent: "#facc15", extra: { depth3dStage: true } },
   { id: "root-drop", name: "Root Drop", x: 4380, lane: 1130, accent: "#fb923c" },
   { id: "swamp-glider", name: "Canopy Jet", x: 5060, lane: 1040, accent: "#06b6d4", extra: { spawnMode: "plane", planeStage: true } },
   { id: "temple-rise", name: "Temple Rise", x: 6740, lane: 1090, accent: "#34d399" },
   { id: "hollow-steps", name: "Hollow Steps", x: 7800, lane: 1180, accent: "#f97316" },
-  { id: "canopy-ceiling", name: "Canopy Ceiling", x: 8820, lane: 650, accent: "#a855f7" },
-  { id: "waterfall-drop", name: "Waterfall Drop", x: 10080, lane: 1060, accent: "#38bdf8" },
+  { id: "canopy-ceiling", name: "Inverted Canopy", x: 8820, lane: 650, accent: "#a855f7", extra: { spawnGravity: -1, invertedStage: true } },
+  { id: "waterfall-drop", name: "Vertical Waterfall", x: 10080, lane: 1060, accent: "#38bdf8", extra: { verticalStage: true } },
   { id: "ghost-leaves", name: "Ghost Leaves", x: 11220, lane: 1120, accent: "#c084fc" },
   { id: "mini-thorns", name: "Mini Thorns", x: 12260, lane: 1160, accent: "#f472b6" },
   { id: "predator-mix", name: "Predator Mix", x: 13480, lane: 1080, accent: "#fde047" },
@@ -648,6 +648,23 @@ function buildCompleteJungleMap() {
   level.testActions.push(jump(4780, 180), jump(8440, 180), jump(11980, 176));
   addSwampGliderSetpiece();
 
+  level.platforms.push(
+    platform(8820, 610, 1260),
+    platform(10060, 1060, 410),
+  );
+  level.portals.push(
+    trigger(8580, 650, 118, 620, "gravityFlip", {
+      target: { x: scaleX(8860), y: 656, mode: "cube", gravity: -1 },
+    }),
+    trigger(9840, 490, 118, 290, "gravityRestore", {
+      target: { x: scaleX(10160), y: 1026, mode: "cube", gravity: 1 },
+    }),
+  );
+  level.hazards.push(
+    ceilingSpike(9230, 656, 76, 30, { color: "#17351f" }),
+  );
+  level.testActions.push(jump(9140, 180));
+
   const bands = [
     [80, 1200, 1325, 84, "horizontal", "#22c55e", { label: "new-root-floor" }],
     [1200, 1120, 870, 320, "tunnel3d", "#84cc16", { vanishY: 700, label: "new-canopy-depth" }],
@@ -655,6 +672,7 @@ function buildCompleteJungleMap() {
     [5400, 1480, 1280, 82, "horizontal", "#06b6d4", { label: "new-swamp-lowline" }],
     [6740, 1200, 940, 82, "diagonal", "#34d399", { dy: -220, label: "new-temple-lift" }],
     [9800, 1160, 760, 88, "horizontal", "#a855f7", { label: "new-high-canopy" }],
+    [10590, 170, 650, 520, "vertical", "#38bdf8", { dir: "down", scaleWidth: false, label: "new-waterfall-vertical-drop" }],
     [12680, 1200, 900, 330, "tunnel3d", "#f472b6", { vanishY: 745, label: "new-predator-depth" }],
     [14380, 1060, 1300, 80, "diagonal", "#4ade80", { dy: -120, label: "new-jungle-finish" }],
   ];

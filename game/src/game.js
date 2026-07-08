@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=76";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=77";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -268,6 +268,7 @@ function spawnForSection(section, index) {
 }
 
 function checkpointYellowSpawn(section) {
+  if (section.verticalStage || section.invertedStage || section.spawnGravity === -1) return null;
   const zone = level.yellowZones.find((item) =>
     item.x < section.x + section.w
     && item.x + item.w > section.x + 120
@@ -327,6 +328,7 @@ function solidPlatformsInSection(section) {
 
 function checkpointSearchLeft(section) {
   if (section.lane < 700) return section.x + 850;
+  if (section.verticalStage) return section.x + 80;
   const actionWindow = checkpointNeedsHoldSetup(section) ? 780 : 220;
   const firstAction = level.testActions
     .filter((action) => {

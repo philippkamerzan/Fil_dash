@@ -233,12 +233,12 @@ const sectionLayout = [
   { id: "lower-deck", name: "Lower Deck", x: 0, lane: 1240, accent: "#38bdf8" },
   { id: "ice-warning", name: "Ice Warning", x: 620, lane: 1160, accent: "#67e8f9" },
   { id: "bulkhead-steps", name: "Bulkhead Steps", x: 1540, lane: 1210, accent: "#fb7185" },
-  { id: "searchlight-hold", name: "Searchlight Hold", x: 2920, lane: 890, accent: "#facc15" },
-  { id: "water-drop", name: "Water Drop", x: 4380, lane: 1148, accent: "#60a5fa" },
+  { id: "searchlight-hold", name: "3D Searchlight Hold", x: 2920, lane: 890, accent: "#facc15", extra: { depth3dStage: true } },
+  { id: "water-drop", name: "Vertical Water Drop", x: 4380, lane: 1148, accent: "#60a5fa", extra: { verticalStage: true } },
   { id: "boiler-flight", name: "Mini Bathyscaphe", x: 5060, lane: 1010, accent: "#f97316", extra: { spawnMode: "plane", planeStage: true } },
   { id: "deck-return", name: "Deck Return", x: 6760, lane: 1110, accent: "#22d3ee" },
   { id: "tilt-steps", name: "Tilt Steps", x: 7840, lane: 1200, accent: "#f59e0b" },
-  { id: "pipe-ceiling", name: "Pipe Ceiling", x: 9000, lane: 650, accent: "#a78bfa" },
+  { id: "pipe-ceiling", name: "Pipe Ceiling Flip", x: 9000, lane: 650, accent: "#a78bfa", extra: { spawnGravity: -1, invertedStage: true } },
   { id: "flooded-hall", name: "Flooded Hall", x: 10060, lane: 1080, accent: "#38bdf8" },
   { id: "lifeboat-rails", name: "Lifeboat Rails", x: 11220, lane: 1180, accent: "#c084fc" },
   { id: "mini-ice", name: "Mini Ice", x: 12380, lane: 1100, accent: "#f472b6" },
@@ -645,10 +645,30 @@ function buildCompleteTitanicMap() {
   );
   level.testActions.push(jump(4720, 180), jump(8380, 186), jump(12180, 178), jump(13060, 240));
 
+  level.platforms.push(
+    platform(9000, 620, 1120),
+    platform(10040, 1080, 420),
+  );
+  level.portals.push(
+    trigger(8760, 840, 118, 320, "gravityFlip", {
+      target: { x: scaleX(9040), y: 666, mode: "cube", gravity: -1 },
+    }),
+    trigger(9880, 500, 118, 290, "gravityRestore", {
+      target: { x: scaleX(10380), y: 1046, mode: "cube", gravity: 1 },
+    }),
+  );
+  level.hazards.push(
+    ceilingSpike(9250, 666, 76, 30, { color: "#dbeafe" }),
+    ceilingSpike(9560, 666, 70, 30, { color: "#bfdbfe", popup: popup({ hiddenOffset: 18, triggerDistance: 220 }) }),
+    ceilingSpike(9820, 666, 76, 30, { color: "#dbeafe" }),
+  );
+  level.testActions.push(jump(9160, 178), jump(9480, 178), jump(9740, 178));
+
   const bands = [
     [60, 1200, 1370, 86, "horizontal", "#38bdf8", { label: "new-lower-deck" }],
     [1040, 1200, 930, 320, "tunnel3d", "#67e8f9", { vanishY: 710, label: "new-ice-tilt" }],
     [2920, 1500, 855, 350, "tunnel3d", "#facc15", { vanishY: 705, label: "new-searchlight-flight" }],
+    [4520, 150, 770, 520, "vertical", "#60a5fa", { dir: "down", scaleWidth: false, label: "new-water-vertical-drop" }],
     [5060, 1640, 980, 150, "horizontal", "#60a5fa", { label: "bathyscaphe-plane-channel" }],
     [5400, 1520, 1305, 82, "horizontal", "#60a5fa", { label: "new-flooded-lowline" }],
     [6820, 1180, 955, 82, "diagonal", "#22d3ee", { dy: -220, label: "new-deck-lift" }],

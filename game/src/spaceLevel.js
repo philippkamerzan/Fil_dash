@@ -201,12 +201,12 @@ const sectionLayout = [
   { id: "launch", name: "Launch", x: 0, lane: 1120, accent: "#38bdf8" },
   { id: "asteroid-hop", name: "Asteroid hop", x: 690, lane: 1048, accent: "#f43f5e" },
   { id: "meteor-steps", name: "Meteor steps", x: 1540, lane: 1048, accent: "#fb7185" },
-  { id: "solar-drift", name: "Solar drift", x: 2920, lane: 860, accent: "#facc15" },
-  { id: "airlock-drop", name: "Airlock drop", x: 4440, lane: 1060, accent: "#fb923c" },
+  { id: "solar-drift", name: "3D Solar Tunnel", x: 2920, lane: 860, accent: "#facc15", extra: { depth3dStage: true } },
+  { id: "airlock-drop", name: "Vertical Airlock", x: 4440, lane: 1060, accent: "#fb923c", extra: { verticalStage: true } },
   { id: "ship-flight", name: "Space Jet", x: 5060, lane: 1010, accent: "#22d3ee", extra: { spawnMode: "plane", planeStage: true } },
   { id: "orbit-return", name: "Orbit return", x: 6800, lane: 1040, accent: "#34d399" },
   { id: "gravity-well", name: "Gravity well", x: 7750, lane: 910, accent: "#f97316" },
-  { id: "ceiling-orbit", name: "Ceiling orbit", x: 8420, lane: 520, accent: "#a78bfa" },
+  { id: "ceiling-orbit", name: "Ceiling Flip", x: 8420, lane: 520, accent: "#a78bfa", extra: { spawnGravity: -1, invertedStage: true } },
   { id: "station-drop", name: "Station drop", x: 9840, lane: 1120, accent: "#38bdf8" },
   { id: "ghost-dock", name: "Ghost dock", x: 11160, lane: 1120, accent: "#c084fc" },
   { id: "mini-comets", name: "Mini comets", x: 12180, lane: 1110, accent: "#f472b6" },
@@ -575,10 +575,30 @@ function buildCompleteSpaceRunMap() {
   level.testActions.push(runJump(5500, 170), runJump(8620, 180), runJump(11840, 170));
   addSpaceFlightSetpiece();
 
+  level.platforms.push(
+    platform(8420, 540, 1460),
+    platform(9880, 1120, 390),
+  );
+  level.portals.push(
+    trigger(8200, 770, 118, 320, "gravityFlip", {
+      target: { x: scaleX(8460), y: 586, mode: "cube", gravity: -1 },
+    }),
+    trigger(9680, 420, 118, 270, "gravityRestore", {
+      target: { x: scaleX(9960), y: 1086, mode: "cube", gravity: 1 },
+    }),
+  );
+  level.hazards.push(
+    ceilingSpike(8735, 586, 72, 30, { color: "#dbeafe" }),
+    ceilingSpike(9145, 586, 68, 30, { color: "#bfdbfe", popup: popup({ hiddenOffset: 18, triggerDistance: 225 }) }),
+    ceilingSpike(9510, 586, 78, 30, { color: "#dbeafe" }),
+  );
+  level.testActions.push(runJump(8640, 180), runJump(9060, 180), runJump(9430, 180));
+
   const bands = [
     [80, 950, 1255, 86, "diagonal", "#38bdf8", { dy: -210, label: "new-orbit-takeoff" }],
     [1040, 1000, 840, 310, "tunnel3d", "#f43f5e", { vanishY: 650, label: "new-meteor-canopy" }],
     [3000, 1440, 790, 370, "tunnel3d", "#facc15", { vanishY: 690, label: "new-solar-flight" }],
+    [4520, 150, 740, 520, "vertical", "#fb923c", { dir: "down", scaleWidth: false, label: "new-airlock-vertical-drop" }],
     [5120, 1440, 1208, 78, "horizontal", "#fb923c", { label: "new-lower-airlock" }],
     [6900, 1260, 890, 84, "diagonal", "#34d399", { dy: -185, label: "new-orbit-lift" }],
     [10000, 1320, 700, 92, "horizontal", "#a78bfa", { label: "new-high-station" }],

@@ -21,6 +21,7 @@ const checks = [
   mobileAttemptsCheck(),
   geometryUniquenessCheck(),
   planeModeStageAudit(),
+  stageVarietyAudit(),
   densityAudit(),
   hitboxAudit(),
   mobileSafeZoneAudit(),
@@ -117,6 +118,76 @@ function planeModeStageAudit() {
     name: "plane-mode stages",
     ok: results.every((result) => result.ok),
     results,
+  };
+}
+
+function stageVarietyAudit() {
+  const scopedLevels = levels.filter((level) => level.number > 1);
+  const results = scopedLevels.map((level) => {
+    const verticalSections = (level.sections || []).filter((section) => section.verticalStage === true);
+    const depthSections = (level.sections || []).filter((section) => section.depth3dStage === true);
+    const invertedSections = (level.sections || []).filter((section) =>
+      section.invertedStage === true || section.spawnGravity === -1
+    );
+    const verticalBands = (level.routeBands || []).filter((band) => band.kind === "vertical");
+    const depthBands = (level.routeBands || []).filter((band) => band.kind === "tunnel3d");
+    const flipPortals = (level.portals || []).filter((portal) =>
+      portal.type === "gravityFlip" && portal.target?.gravity === -1
+    );
+    const restorePortals = (level.portals || []).filter((portal) =>
+      portal.type === "gravityRestore" && portal.target?.gravity === 1
+    );
+    return {
+      level: level.number,
+      ok: verticalSections.some((section) => overlapsAny(section, verticalBands))
+        && depthSections.some((section) => overlapsAny(section, depthBands))
+        && invertedSections.length > 0
+        && flipPortals.length > 0
+        && restorePortals.length > 0,
+      verticalSections: verticalSections.map(sectionSummary),
+      depth3dSections: depthSections.map(sectionSummary),
+      invertedSections: invertedSections.map(sectionSummary),
+      verticalBands: verticalBands.map(bandSummary),
+      depth3dBands: depthBands.map(bandSummary),
+      flipPortals: flipPortals.map(portalSummary),
+      restorePortals: restorePortals.map(portalSummary),
+    };
+  });
+  return {
+    name: "vertical 3d inverted stages",
+    ok: results.every((result) => result.ok),
+    results,
+  };
+}
+
+function overlapsAny(section, bands) {
+  return bands.some((band) => band.x < section.x + section.w && band.x + band.w > section.x);
+}
+
+function sectionSummary(section) {
+  return {
+    id: section.id,
+    name: section.name,
+    x: Math.round(section.x),
+    w: Math.round(section.w),
+  };
+}
+
+function bandSummary(band) {
+  return {
+    label: band.label,
+    kind: band.kind,
+    x: Math.round(band.x),
+    w: Math.round(band.w),
+  };
+}
+
+function portalSummary(portal) {
+  return {
+    type: portal.type,
+    x: Math.round(portal.x),
+    targetX: Math.round(portal.target.x),
+    targetGravity: portal.target.gravity,
   };
 }
 
