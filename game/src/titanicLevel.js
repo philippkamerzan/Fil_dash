@@ -223,6 +223,47 @@ level.hazards = level.hazards.filter((hazard) =>
   !(hazard.y === 1086 && hazard.x > scaleX(1540) && hazard.x < scaleX(1585))
 );
 
+level.hazards = level.hazards.map((hazard) => {
+  if (hazard.dir === "down" && hazard.y === 900 && hazard.x > 2000 && hazard.x < 2110) {
+    return { ...hazard, y: 852, h: 28 };
+  }
+  if (hazard.dir === "up" && hazard.y === 1086 && hazard.x > 1880 && hazard.x < 1945) {
+    return { ...hazard, x: hazard.x + 92 };
+  }
+  if (hazard.dir === "up" && hazard.y === 1086 && hazard.x > 2520 && hazard.x < 2585) {
+    return { ...hazard, x: hazard.x + 104 };
+  }
+  if (hazard.dir === "up" && hazard.y === 1086 && hazard.x > 3470 && hazard.x < 3540) {
+    return { ...hazard, x: hazard.x + 112, popup: popup({ triggerDistance: 245 }) };
+  }
+  if (hazard.dir === "up" && hazard.y === 1086 && hazard.x > 4840 && hazard.x < 4910) {
+    return { ...hazard, x: hazard.x + 124 };
+  }
+  if (hazard.dir === "up" && hazard.y === 1086 && hazard.x > 23240 && hazard.x < 23820) {
+    return { ...hazard, x: hazard.x + 136, popup: popup({ triggerDistance: 250 }) };
+  }
+  if (hazard.dir === "up" && hazard.y === 866 && hazard.x > 26700 && hazard.x < 26790) {
+    return { ...hazard, x: hazard.x + 118, popup: popup({ triggerDistance: 230 }) };
+  }
+  return hazard;
+});
+
+level.hazards = level.hazards.filter((hazard) =>
+  !(hazard.dir === "up" && hazard.y === 1086 && hazard.x > 23240 && hazard.x < 23620)
+);
+
+level.hazards = level.hazards.filter((hazard) =>
+  !(hazard.dir === "up" && hazard.y === 1086 && hazard.x > 4950 && hazard.x < 5060)
+);
+
+level.hazards = level.hazards.filter((hazard) =>
+  !(hazard.dir === "down" && hazard.y === 542 && hazard.x > 18200 && hazard.x < 18350)
+);
+
+level.hazards = level.hazards.filter((hazard) =>
+  !(hazard.dir === "up" && hazard.y === 1086 && hazard.x > 24120 && hazard.x < 24190)
+);
+
 level.movers = [
   ...level.movers,
   mover(9580, 730, 56, 60, "x", 88, 2.2, 0.7, "#94a3b8"),
@@ -230,6 +271,10 @@ level.movers = [
   mover(13780, 850, 50, 58, "x", 86, 2.55, 0.9, "#7dd3fc"),
   mover(14370, 1088, 58, 62, "y", 48, 2.35, 2.2, "#fbbf24"),
 ];
+
+level.movers = level.movers.filter((item) =>
+  !(!item.color && item.x > 23530 && item.x < 23630 && item.y >= 900)
+);
 
 level.mouths = [
   ...level.mouths,
@@ -245,15 +290,21 @@ level.speedZones = [
   { x: scaleX(14550), y: 930, w: 92, h: 132, type: "fast", speed: 525 },
 ];
 
+level.yellowZones = level.yellowZones.map((zone) =>
+  Math.abs(zone.x - scaleX(3160)) < 4
+    ? { ...zone, x: zone.x - 720, w: zone.w + 720, targetY: 805 }
+    : zone
+);
+
 level.testActions = [
   ...level.testActions,
-  jump(700), jump(850, 170), jump(980), jump(1180, 230), jump(1220), jump(1390),
+  jump(700), jump(790, 230), jump(830, 260), jump(940, 180), jump(1180, 230), jump(1220), jump(1390),
   jump(1545), jump(1840), jump(1990), jump(2110), jump(2290), jump(2520),
   jump(2810), jump(2990), hold(3160, 1240), jump(4400), jump(4540), jump(4700),
   hold(5180, 420), hold(5540, 360), hold(5780, 360), hold(6100, 460),
   jump(7000), jump(7240), jump(7560), jump(7830), hold(8690, 160),
   hold(9040, 160), hold(9380, 160), hold(9780, 150), jump(9870), jump(10255),
-  jump(10945), jump(11240), jump(11535), jump(11840), jump(12340),
+  jump(10945), jump(11160, 260), jump(11225, 240), jump(11535), jump(11840), jump(12340),
   jump(12570), jump(12780), jump(12885), jump(12990), jump(13190), jump(13390), jump(13555),
   hold(13690, 450), jump(14140), jump(14200), jump(14545), jump(14760), jump(14925), jump(14980),
 ].sort((a, b) => a.x - b.x);

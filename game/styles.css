@@ -337,12 +337,13 @@ body.force-landscape .game-shell {
 
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
 .result-grid div,
-.leaderboards section {
+.leaderboards section,
+.shop-panel {
   border: 2px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   background: rgba(16, 19, 31, 0.72);
@@ -386,11 +387,79 @@ body.force-landscape .game-shell {
   padding: 10px;
 }
 
-.leaderboards h2 {
+.leaderboards h2,
+.shop-panel h2 {
   margin: 0 0 8px;
   color: #dffbff;
   font-size: 13px;
   letter-spacing: 0;
+}
+
+.shop-panel {
+  min-width: 0;
+  padding: 10px;
+}
+
+.skin-shop {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.skin-choice {
+  min-width: 0;
+  min-height: 50px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.skin-choice:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.skin-choice.active {
+  border-color: rgba(255, 212, 77, 0.82);
+  background: rgba(255, 212, 77, 0.16);
+}
+
+.skin-swatch {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #11131b;
+  border-radius: 7px;
+  box-shadow: inset 7px 7px 0 rgba(255, 255, 255, 0.22);
+}
+
+.skin-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.skin-copy b,
+.skin-copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skin-copy span {
+  color: rgba(246, 247, 251, 0.64);
+  font-size: 11px;
 }
 
 .leaderboard-list {
@@ -517,6 +586,10 @@ body.force-landscape .game-shell {
     font-size: 12px;
   }
 
+  .coins-stat {
+    min-width: 82px;
+  }
+
   .section-pill {
     min-width: 92px;
     max-width: min(36vw, 190px);
@@ -584,7 +657,7 @@ body.force-landscape .game-shell {
 
   .results-panel {
     width: min(620px, calc(100vw - 24px));
-    max-height: 46vh;
+    max-height: 60vh;
     gap: 8px;
   }
 
@@ -592,8 +665,29 @@ body.force-landscape .game-shell {
     padding: 8px 9px;
   }
 
+  .leaderboards section,
+  .shop-panel {
+    padding: 8px;
+  }
+
   .result-grid b {
     font-size: 15px;
+  }
+
+  .skin-shop {
+    gap: 6px;
+  }
+
+  .skin-choice {
+    min-height: 44px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 6px;
+    padding: 4px 6px;
+  }
+
+  .skin-swatch {
+    width: 24px;
+    height: 24px;
   }
 
   .leaderboard-list {
@@ -636,6 +730,10 @@ body.force-landscape .hud-stat {
   min-width: 76px;
   padding: 0 10px;
   font-size: 12px;
+}
+
+body.force-landscape .coins-stat {
+  min-width: 82px;
 }
 
 body.force-landscape .section-pill {
@@ -707,7 +805,7 @@ body.force-landscape .level-choice span {
 
 body.force-landscape .results-panel {
   width: min(620px, calc(100vw - 24px));
-  max-height: 46vh;
+  max-height: 60vh;
   gap: 8px;
 }
 
@@ -715,8 +813,29 @@ body.force-landscape .result-grid div {
   padding: 8px 9px;
 }
 
+body.force-landscape .leaderboards section,
+body.force-landscape .shop-panel {
+  padding: 8px;
+}
+
 body.force-landscape .result-grid b {
   font-size: 15px;
+}
+
+body.force-landscape .skin-shop {
+  gap: 6px;
+}
+
+body.force-landscape .skin-choice {
+  min-height: 44px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 6px;
+  padding: 4px 6px;
+}
+
+body.force-landscape .skin-swatch {
+  width: 24px;
+  height: 24px;
 }
 
 body.force-landscape .leaderboard-list {
@@ -769,6 +888,11 @@ body.force-landscape .primary-button {
 
   .leaderboards {
     grid-template-columns: 1fr;
+  }
+
+  .result-grid,
+  .skin-shop {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .leaderboard-list {

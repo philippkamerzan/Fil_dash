@@ -133,6 +133,10 @@ level.hazards = level.hazards.filter((hazard) =>
   !(Math.abs(hazard.x - scaleX(2185)) <= 1 && hazard.y === 1086)
 );
 level.hazards = level.hazards.filter((hazard) =>
+  !(hazard.y === 1086 && hazard.x > 1880 && hazard.x < 1945)
+  && !(hazard.y === 1086 && hazard.x > 2520 && hazard.x < 2585)
+);
+level.hazards = level.hazards.filter((hazard) =>
   !(
     (Math.abs(hazard.x - scaleX(7150)) <= 1 || Math.abs(hazard.x - scaleX(7495)) <= 1)
     && hazard.y === 896

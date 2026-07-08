@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=36";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=56";
 import { startSpace3dLayer } from "./space3d.js?v=1";
 
 const canvas = document.querySelector("#game");
@@ -15,13 +15,16 @@ const soundToggle = document.querySelector("#soundToggle");
 const levelNameEl = document.querySelector("#levelName");
 const attemptsEl = document.querySelector("#attempts");
 const bestTimeEl = document.querySelector("#bestTime");
+const coinsCountEl = document.querySelector("#coinsCount");
 const sectionEl = document.querySelector("#sectionName");
 const progressEl = document.querySelector("#progressFill");
 const lastResultEl = document.querySelector("#lastResult");
 const bestResultEl = document.querySelector("#bestResult");
 const rankResultEl = document.querySelector("#rankResult");
+const rewardResultEl = document.querySelector("#rewardResult");
 const localLeaderboardEl = document.querySelector("#localLeaderboard");
 const globalLeaderboardEl = document.querySelector("#globalLeaderboard");
+const skinShopEl = document.querySelector("#skinShop");
 
 const searchParams = new URLSearchParams(window.location.search);
 const level = getLevelById(searchParams.get("level") || searchParams.get("levelId"));
@@ -35,11 +38,20 @@ const TITANIC_LEVEL = LEVEL_THEME === "titanic";
 const TEST_RUN = searchParams.has("testRun");
 const TEST_SECTION = searchParams.get("section") || "";
 const TEST_TIME_SCALE = Number(searchParams.get("timeScale")) || 1;
+const TEST_VARIANT = normalizeTestVariant(searchParams.get("variant"));
 const LEADERBOARD_API_URL = searchParams.get("leaderboardApi") || window.FIL_DASH_LEADERBOARD_API || "/api/leaderboard";
 const LEGACY_LOCAL_RECORDS_KEY = "filDash.records.v1";
 const LOCAL_RECORDS_KEY = `filDash.records.${LEVEL_ID}.v1`;
+const RECORD_REWARDS_KEY = `filDash.recordRewards.${LEVEL_ID}.v1`;
+const WALLET_KEY = "filDash.wallet.v1";
+const SKINS_KEY = "filDash.skins.v1";
+const SELECTED_SKIN_KEY = "filDash.selectedSkin.v1";
 const PLAYER_ID_KEY = "filDash.playerId.v1";
 const MAX_LOCAL_RECORDS = 12;
+const HOLD_THRESHOLD_SECONDS = 0.1;
+const HOLD_CAP_SECONDS = 0.32;
+const INPUT_SPAM_GUARD_SECONDS = 0.08;
+const TEST_VARIANT_TIME_SHIFT = TEST_VARIANT === "early" ? -0.08 : TEST_VARIANT === "late" ? 0.08 : 0;
 
 const keys = {
   jump: false,
@@ -59,6 +71,15 @@ const colors = {
   red: "#ff3f5f",
   paper: "#fbf3e4",
 };
+
+const PLAYER_SKINS = [
+  { id: "classic", name: "FIL", price: 0, body: colors.blue, mini: colors.pink, eye: colors.cyan, trail: colors.orange, plane: colors.cyan },
+  { id: "mint", name: "Mint", price: 12, body: "#10b981", mini: "#34d399", eye: "#ccfbf1", trail: "#2dd4bf", plane: "#5eead4" },
+  { id: "gold", name: "Gold", price: 18, body: "#f59e0b", mini: "#facc15", eye: "#fff7ed", trail: "#fde047", plane: "#fbbf24" },
+  { id: "ruby", name: "Ruby", price: 24, body: "#e11d48", mini: "#fb7185", eye: "#ffe4e6", trail: "#f43f5e", plane: "#fb7185" },
+  { id: "neon", name: "Neon", price: 32, body: "#7c3aed", mini: "#a855f7", eye: "#67e8f9", trail: "#22d3ee", plane: "#8b5cf6" },
+];
+const DEFAULT_SKIN_ID = PLAYER_SKINS[0].id;
 
 const MOUTH_CLOSE_SECONDS = 0.24;
 const MOUTH_TOOTH_H = 26;
@@ -129,6 +150,17 @@ const player = {
   portalScale: 1,
 };
 
+const inputState = {
+  pressStartedAt: null,
+  lastReleaseAt: -Infinity,
+};
+
+const economy = {
+  coins: 0,
+  ownedSkins: new Set([DEFAULT_SKIN_ID]),
+  selectedSkinId: DEFAULT_SKIN_ID,
+};
+
 let dpr = 1;
 let viewW = 0;
 let viewH = 0;
@@ -151,6 +183,114 @@ function safeParseJson(value, fallback) {
     return value ? JSON.parse(value) : fallback;
   } catch {
     return fallback;
+  }
+}
+
+function normalizeTestVariant(value) {
+  const normalized = String(value || "perfect").trim().toLowerCase();
+  if (normalized === "early" || normalized === "early-jump") return "early";
+  if (normalized === "late" || normalized === "late-jump") return "late";
+  return "perfect";
+}
+
+function loadEconomy() {
+  const wallet = safeParseJson(localStorage.getItem(WALLET_KEY), {});
+  const skins = safeParseJson(localStorage.getItem(SKINS_KEY), {});
+  const owned = Array.isArray(skins.owned) ? skins.owned.filter((id) => skinById(id)) : [];
+  economy.coins = Math.max(0, Math.floor(Number(wallet.coins) || 0));
+  economy.ownedSkins = new Set([DEFAULT_SKIN_ID, ...owned]);
+  const selected = localStorage.getItem(SELECTED_SKIN_KEY) || skins.selected || DEFAULT_SKIN_ID;
+  economy.selectedSkinId = economy.ownedSkins.has(selected) && skinById(selected) ? selected : DEFAULT_SKIN_ID;
+}
+
+function saveEconomy() {
+  localStorage.setItem(WALLET_KEY, JSON.stringify({ coins: economy.coins }));
+  localStorage.setItem(SKINS_KEY, JSON.stringify({
+    owned: [...economy.ownedSkins],
+    selected: economy.selectedSkinId,
+  }));
+  localStorage.setItem(SELECTED_SKIN_KEY, economy.selectedSkinId);
+}
+
+function skinById(id) {
+  return PLAYER_SKINS.find((skin) => skin.id === id);
+}
+
+function currentSkin() {
+  return skinById(economy.selectedSkinId) || PLAYER_SKINS[0];
+}
+
+function recordRewards() {
+  const rewards = safeParseJson(localStorage.getItem(RECORD_REWARDS_KEY), []);
+  return Array.isArray(rewards) ? rewards : [];
+}
+
+function saveRecordRewards(rewards) {
+  localStorage.setItem(RECORD_REWARDS_KEY, JSON.stringify(rewards.slice(-60)));
+}
+
+function isBetterRecord(candidate, previous) {
+  if (!previous) return true;
+  if ((candidate.progress ?? 0) !== (previous.progress ?? 0)) return (candidate.progress ?? 0) > (previous.progress ?? 0);
+  if ((candidate.attempts ?? 999) !== (previous.attempts ?? 999)) return (candidate.attempts ?? 999) < (previous.attempts ?? 999);
+  return (candidate.time ?? 9999) < (previous.time ?? 9999) - 0.01;
+}
+
+function rewardCoinsForNewRecord(record, previousBest) {
+  if (!isBetterRecord(record, previousBest)) return 0;
+  const reward = Math.max(6, 6 + (level.number || 1) * 2);
+  const rewards = recordRewards();
+  rewards.push({
+    id: `${record.id}:${LEVEL_ID}`,
+    levelId: LEVEL_ID,
+    recordId: record.id,
+    coins: reward,
+    createdAt: record.createdAt,
+  });
+  saveRecordRewards(rewards);
+  economy.coins += reward;
+  saveEconomy();
+  return reward;
+}
+
+function renderSkinShop() {
+  if (!skinShopEl) return;
+  skinShopEl.replaceChildren();
+  for (const skin of PLAYER_SKINS) {
+    const owned = economy.ownedSkins.has(skin.id);
+    const active = economy.selectedSkinId === skin.id;
+    const affordable = economy.coins >= skin.price;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "skin-choice";
+    button.classList.toggle("active", active);
+    button.disabled = !owned && !affordable;
+    button.setAttribute("aria-pressed", String(active));
+    button.dataset.skinId = skin.id;
+
+    const swatch = document.createElement("span");
+    swatch.className = "skin-swatch";
+    swatch.style.background = skin.body;
+    const copy = document.createElement("span");
+    copy.className = "skin-copy";
+    const title = document.createElement("b");
+    title.textContent = skin.name;
+    const meta = document.createElement("span");
+    meta.textContent = active ? "Выбран" : owned ? "Есть" : `${skin.price} мон.`;
+    copy.append(title, meta);
+    button.append(swatch, copy);
+
+    button.addEventListener("click", () => {
+      if (!economy.ownedSkins.has(skin.id)) {
+        if (economy.coins < skin.price) return;
+        economy.coins -= skin.price;
+        economy.ownedSkins.add(skin.id);
+      }
+      economy.selectedSkinId = skin.id;
+      saveEconomy();
+      updateRecordsUi();
+    });
+    skinShopEl.append(button);
   }
 }
 
@@ -222,7 +362,7 @@ function levelPickerName(item) {
 function levelHref(item) {
   const params = new URLSearchParams(window.location.search);
   params.set("level", String(item.number || item.id));
-  for (const key of ["testRun", "timeScale", "section", "r"]) params.delete(key);
+  for (const key of ["testRun", "timeScale", "section", "variant", "r"]) params.delete(key);
   const query = params.toString();
   return `${window.location.pathname}${query ? `?${query}` : ""}`;
 }
@@ -294,9 +434,11 @@ function localRank(record, records) {
 function recordFinishResult() {
   if (TEST_RUN) return;
   const record = currentRunRecord();
+  const previousBest = sortRecords(getLocalRecords())[0];
+  const rewardCoins = rewardCoinsForNewRecord(record, previousBest);
   const records = sortRecords([record, ...getLocalRecords()]).slice(0, MAX_LOCAL_RECORDS);
   saveLocalRecords(records);
-  state.finishResult = { ...record, rank: localRank(record, records) };
+  state.finishResult = { ...record, rank: localRank(record, records), rewardCoins };
   updateRecordsUi();
   submitGlobalRecord(record);
 }
@@ -324,12 +466,15 @@ function renderLeaderboard(target, records, emptyText) {
 function updateRecordsUi() {
   const localRecords = sortRecords(getLocalRecords());
   const best = localRecords[0];
+  if (coinsCountEl) coinsCountEl.textContent = String(economy.coins);
   bestTimeEl.textContent = best ? formatDuration(best.time) : "--";
   bestResultEl.textContent = formatRecord(best);
   lastResultEl.textContent = state.finishResult ? formatRecord(state.finishResult) : "--";
   rankResultEl.textContent = state.finishResult?.rank ? `#${state.finishResult.rank}` : "--";
+  if (rewardResultEl) rewardResultEl.textContent = state.finishResult?.rewardCoins ? `+${state.finishResult.rewardCoins}` : "--";
   renderLeaderboard(localLeaderboardEl, localRecords, "Пока пусто");
   renderLeaderboard(globalLeaderboardEl, state.globalLeaderboard, state.globalLeaderboardReady ? "Пока пусто" : "Нет связи");
+  renderSkinShop();
 }
 
 async function refreshGlobalLeaderboard() {
@@ -785,18 +930,31 @@ function targetSpeed() {
   return speed * multiplier;
 }
 
+function jumpPressAge() {
+  return keys.jump && inputState.pressStartedAt != null ? Math.max(0, state.time - inputState.pressStartedAt) : 0;
+}
+
+function holdInputStrength() {
+  if (!keys.jump) return 0;
+  if (TEST_RUN) return 1;
+  const age = jumpPressAge();
+  if (age < HOLD_THRESHOLD_SECONDS) return 0;
+  return Math.max(0, Math.min(1, (age - HOLD_THRESHOLD_SECONDS) / (HOLD_CAP_SECONDS - HOLD_THRESHOLD_SECONDS)));
+}
+
 function updateCube(dt) {
   const old = { x: player.x, y: player.y };
   player.yellowActive = false;
   updateMiniMode();
 
+  const holdPower = holdInputStrength();
   for (const zone of level.yellowZones) {
     if (!rectsOverlap(playerRect(), zone)) continue;
-    if (keys.jump) {
+    if (holdPower > 0) {
       player.yellowActive = true;
       player.vx = Math.max(player.vx, zone.minSpeed);
-      player.vy += (zone.targetY - player.y) * 18 * dt;
-      player.vy *= 0.66;
+      player.vy += (zone.targetY - player.y) * (15 + holdPower * 3) * dt;
+      player.vy *= 0.72 - holdPower * 0.06;
     } else if (player.x > zone.x + 70 && player.x < zone.x + zone.w - 30) {
       player.vy += 980 * dt;
     }
@@ -835,8 +993,9 @@ function updateCube(dt) {
 }
 
 function updatePlane(dt) {
+  const holdPower = holdInputStrength();
   player.vx += (402 - player.vx) * Math.min(1, dt * 7);
-  player.vy += (keys.jump ? -1030 : 820) * dt;
+  player.vy += (holdPower > 0 ? -1030 * holdPower : 820) * dt;
   player.vy *= 0.988;
   player.vy = Math.max(-390, Math.min(390, player.vy));
   player.x += player.vx * dt;
@@ -2580,9 +2739,10 @@ function drawParticles() {
 function drawPlayer() {
   ctx.save();
   ctx.translate(-camera.x, -camera.y);
+  const skin = currentSkin();
   for (const t of player.trail) {
     ctx.globalAlpha = Math.max(0, t.life * 2.2);
-    ctx.fillStyle = t.activeYellow ? colors.yellow : t.mode === "plane" ? colors.cyan : t.mini ? colors.pink : colors.orange;
+    ctx.fillStyle = t.activeYellow ? colors.yellow : t.mode === "plane" ? skin.plane : t.mini ? skin.mini : skin.trail;
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.activeYellow ? 10 : t.mini ? 5 : 7, 0, Math.PI * 2);
     ctx.fill();
@@ -2595,33 +2755,35 @@ function drawPlayer() {
 }
 
 function drawCube() {
+  const skin = currentSkin();
   const cx = player.x + player.w / 2;
   const cy = player.y + player.h / 2;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(player.angle);
   ctx.scale(player.portalScale, player.portalScale);
-  ctx.fillStyle = player.mini ? colors.pink : colors.blue;
+  ctx.fillStyle = player.mini ? skin.mini : skin.body;
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = player.mini ? 5 : 6;
   ctx.beginPath();
   ctx.roundRect(-player.w / 2, -player.h / 2, player.w, player.h, 5);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = colors.cyan;
+  ctx.fillStyle = skin.eye;
   ctx.fillRect(-player.w * 0.28, -player.h * 0.18, player.w * 0.2, player.h * 0.24);
   ctx.fillRect(player.w * 0.1, -player.h * 0.18, player.w * 0.2, player.h * 0.24);
   ctx.restore();
 }
 
 function drawPlane() {
+  const skin = currentSkin();
   const cx = player.x + player.w / 2;
   const cy = player.y + player.h / 2;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(player.angle);
   ctx.scale(player.portalScale, player.portalScale);
-  ctx.fillStyle = colors.cyan;
+  ctx.fillStyle = skin.plane;
   ctx.strokeStyle = colors.ink;
   ctx.lineWidth = 5;
   ctx.beginPath();
@@ -2632,7 +2794,7 @@ function drawPlane() {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = colors.yellow;
+  ctx.fillStyle = skin.eye;
   ctx.fillRect(-5, -5, 13, 10);
   ctx.restore();
 }
@@ -2673,8 +2835,16 @@ function loop(now) {
   requestAnimationFrame(loop);
 }
 
-function setKey(value) {
-  keys.jump = value;
+function setKey(value, { bypassSpam = false } = {}) {
+  const next = !!value;
+  if (next === keys.jump) return;
+  if (next && !bypassSpam && state.running && state.time - inputState.lastReleaseAt < INPUT_SPAM_GUARD_SECONDS) return;
+  keys.jump = next;
+  if (next) inputState.pressStartedAt = state.time;
+  else {
+    inputState.lastReleaseAt = state.time;
+    inputState.pressStartedAt = null;
+  }
 }
 
 function readExternalTestInput() {
@@ -2682,7 +2852,7 @@ function readExternalTestInput() {
   if (!raw) return;
   try {
     const input = JSON.parse(raw);
-    keys.jump = !!input.jump;
+    setKey(!!input.jump, { bypassSpam: true });
   } catch {
     canvas.dataset.testInput = "";
   }
@@ -2692,19 +2862,31 @@ function applyTestRunInput() {
   if (!TEST_RUN) return;
   let jump = false;
   const x = player.x;
+  const variantOffset = testVariantOffset();
 
   if (player.mode === "plane") {
     const target = planeTargetY(x);
     jump = player.y + player.h / 2 > target;
   } else {
-    jump = level.testActions.some((action) => x > action.x && x < action.x + action.w);
+    const variantSlack = 0;
+    const inShiftedAction = (action) =>
+      x > action.x + variantOffset - variantSlack
+      && x < action.x + action.w + variantOffset + variantSlack;
+    const holdAction = level.testActions.some((action) => action.kind === "hold" && inShiftedAction(action));
+    const jumpAction = level.testActions.some((action) => action.kind !== "hold" && inShiftedAction(action));
+    jump = holdAction || (player.onGround && jumpAction);
     jump ||= seesFloorSpikeAhead();
     jump ||= seesMoverAhead();
     jump ||= level.yellowZones.some((zone) => x > zone.x + 10 && x < zone.x + zone.w - 95);
     jump ||= level.orbs.some((orb) => Math.abs((orb.x + orb.w / 2) - (player.x + player.w / 2)) < 42);
     jump ||= level.gravityRings.some((ring) => Math.abs((ring.x + ring.w / 2) - (player.x + player.w / 2)) < 42);
   }
-  keys.jump = jump;
+  setKey(jump, { bypassSpam: true });
+}
+
+function testVariantOffset() {
+  if (!TEST_VARIANT_TIME_SHIFT) return 0;
+  return Math.round((player.vx || targetSpeed()) * TEST_VARIANT_TIME_SHIFT);
 }
 
 function seesFloorSpikeAhead() {
@@ -2720,7 +2902,7 @@ function seesFloorSpikeAhead() {
         : state.currentSection?.id === "trap"
           ? 80
           : 160;
-  const lookAhead = level.testLookAhead ?? defaultLookAhead;
+  const lookAhead = Math.max(36, (level.testLookAhead ?? defaultLookAhead) - testVariantOffset());
   return level.hazards.some((h) => {
     const ahead = h.x >= front - 8 && h.x <= front + lookAhead;
     if (!ahead) return false;
@@ -2732,7 +2914,7 @@ function seesFloorSpikeAhead() {
 function seesMoverAhead() {
   if (!player.onGround) return false;
   const front = player.x + player.w;
-  const lookAhead = level.testMoverLookAhead ?? 170;
+  const lookAhead = Math.max(48, (level.testMoverLookAhead ?? 170) - testVariantOffset());
   return level.movers.some((m) => {
     const r = movingRect(m);
     const ahead = r.x >= front - 10 && r.x <= front + lookAhead;
@@ -2939,6 +3121,26 @@ function debugSnapshot() {
       musicGestureRetryBound: levelMusicGestureRetryBound,
       muted: state.muted,
     },
+    input: {
+      jump: keys.jump,
+      holdAge: Math.round(jumpPressAge() * 1000) / 1000,
+      holdStrength: Math.round(holdInputStrength() * 100) / 100,
+      holdThresholdSeconds: HOLD_THRESHOLD_SECONDS,
+      holdCapSeconds: HOLD_CAP_SECONDS,
+      spamGuardSeconds: INPUT_SPAM_GUARD_SECONDS,
+    },
+    testRun: {
+      enabled: TEST_RUN,
+      variant: TEST_VARIANT,
+      timeScale: TEST_TIME_SCALE,
+      timeShiftMs: Math.round(TEST_VARIANT_TIME_SHIFT * 1000),
+    },
+    economy: {
+      coins: economy.coins,
+      selectedSkinId: economy.selectedSkinId,
+      ownedSkins: [...economy.ownedSkins],
+      rewardKey: RECORD_REWARDS_KEY,
+    },
   };
 }
 
@@ -2975,6 +3177,7 @@ if (SPACE_LEVEL && space3dCanvas) {
 
 resize();
 initTelegram();
+loadEconomy();
 document.title = level.title || "FIL Dash";
 if (levelNameEl) levelNameEl.textContent = level.shortTitle || `L${level.number || 1}`;
 overlayTitle.textContent = level.title || "FIL Dash";

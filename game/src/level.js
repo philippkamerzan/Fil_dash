@@ -182,13 +182,13 @@ addCeilingBite(610, 890, 96, 34, "#2d68ff");
 addSpike(780, 1086, 34, 34, "up");
 addSpike(930, 1086, 30, 34, "up");
 addCeilingBite(995, 900, 88, 34, "#2d68ff");
-addSpike(1048, 1086, 34, 34, "up");
 addSpike(1164, 1086, 30, 34, "up");
 addJump(150);
 addJump(292);
 addJump(518);
 addJump(742);
 addJump(902);
+addJump(960, 220);
 addJump(1000);
 addJump(1135);
 boosters.push(trigger(825, 1057, 66, 66, "blueBoost", { power: 760 }));
@@ -361,7 +361,6 @@ addPopupSpike(13680, 692, 120, 14, "down", { popup: { triggerDistance: 230, exte
 addSpike(13920, 946, 42, 34, "up");
 movers.push({ x: 14370, y: 1100, w: 62, h: 62, axis: "y", amp: 44, speed: 1.9, phase: 2.1, kind: "movingHazard" });
 movers.push({ x: 13780, y: 846, w: 46, h: 52, axis: "x", amp: 76, speed: 1.7, phase: 1.3, kind: "movingHazard" });
-movers.push({ x: 14155, y: 880, w: 44, h: 52, axis: "y", amp: 56, speed: 2.25, phase: 0.9, kind: "movingHazard" });
 addJump(13310, 140);
 addHold(13515, 70);
 addJump(13610, 110);
@@ -450,6 +449,27 @@ function scaleLevelToGeometryDashLength() {
 }
 
 scaleLevelToGeometryDashLength();
+
+const unreachableBaseSpikes = [
+  { xMin: 2010, xMax: 2100, y: 900 },
+  { xMin: 2360, xMax: 2430, y: 1086 },
+  { xMin: 3980, xMax: 4100, y: 1086 },
+  { xMin: 15320, xMax: 15440, y: 896 },
+  { xMin: 25680, xMax: 25810, y: 876 },
+  { xMin: 26980, xMax: 27060, y: 866 },
+  { xMin: 28180, xMax: 28380, y: 692 },
+  { xMin: 28680, xMax: 28820, y: 946 },
+  { xMin: 30860, xMax: 30970, y: 1006 },
+];
+
+for (const marker of unreachableBaseSpikes) {
+  const index = hazards.findIndex((hazard) =>
+    hazard.y === marker.y
+    && hazard.x > marker.xMin
+    && hazard.x < marker.xMax
+  );
+  if (index >= 0) hazards.splice(index, 1);
+}
 
 export const level = {
   id: "level-1",
