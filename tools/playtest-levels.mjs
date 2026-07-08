@@ -174,11 +174,11 @@ function runLevel(level, variant) {
   }
 
   function updatePlane(step) {
-    const holdPower = holdInputStrength();
+    const holdPower = keys.jump ? Math.max(0.42, holdInputStrength()) : 0;
     player.vx += (402 - player.vx) * Math.min(1, step * 7);
-    player.vy += (holdPower > 0 ? -1030 * holdPower : 820) * step;
-    player.vy *= 0.988;
-    player.vy = Math.max(-390, Math.min(390, player.vy));
+    player.vy += (holdPower > 0 ? -1420 * holdPower : 760) * step;
+    player.vy *= 0.982;
+    player.vy = Math.max(-470, Math.min(430, player.vy));
     player.x += player.vx * step;
     player.y += player.vy * step;
 
