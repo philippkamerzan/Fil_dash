@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=69";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=70";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -87,6 +87,7 @@ const JUNGLE_PARTICLE_COUNT = JUNGLE_PERF_MODE ? 32 : 70;
 const JUNGLE_DEPTH_LEAF_COUNT = JUNGLE_PERF_MODE ? 10 : 22;
 const TITANIC_WINDOW_COUNT = TITANIC_PERF_MODE ? 14 : 30;
 const TITANIC_ICE_COUNT = TITANIC_PERF_MODE ? 7 : 16;
+const TITANIC_LANDMARK_COUNT = TITANIC_PERF_MODE ? 4 : 7;
 const JUNGLE_DECOR_MARGIN = JUNGLE_PERF_MODE ? 70 : 120;
 const MAX_TRAIL_POINTS = SPACE_PERF_MODE ? 16 : 34;
 const PLAYER_SPAWN_SIZE = 34;
@@ -2316,6 +2317,8 @@ function drawTitanicStageDepth(section, baseX, baseY, beat) {
     ctx.fill();
   }
 
+  drawTitanicParallaxLiners(baseX, baseY, beat);
+
   for (let i = 0; i < TITANIC_ICE_COUNT; i++) {
     const x = (baseX * 2.2 + i * 167) % (viewW + 300) - 130;
     const y = viewH * 0.54 + ((baseY + i * 61) % (viewH * 0.38));
@@ -2331,6 +2334,76 @@ function drawTitanicStageDepth(section, baseX, baseY, beat) {
     ctx.lineTo(x + 28 * s, y + 10 * s);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawTitanicParallaxLiners(baseX, baseY, beat) {
+  for (let i = 0; i < TITANIC_LANDMARK_COUNT; i++) {
+    const x = (baseX * 0.72 + i * 360) % (viewW + 580) - 300;
+    const y = viewH * 0.15 + ((baseY * 0.44 + i * 57) % 94);
+    const s = 0.72 + (i % 3) * 0.08;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.globalAlpha = 0.16 + beat * 0.035;
+    drawTitanicShipSilhouette(0, 0, 390, 0.52, i % 2 === 0);
+    ctx.restore();
+  }
+}
+
+function drawTitanicShipSilhouette(x, y, width = 420, alpha = 0.5, bowRight = true) {
+  ctx.save();
+  ctx.translate(x, y);
+  if (!bowRight) ctx.scale(-1, 1);
+  const w = width;
+  ctx.globalAlpha *= alpha;
+  ctx.fillStyle = "#0f172a";
+  ctx.strokeStyle = "rgba(226, 232, 240, 0.78)";
+  ctx.lineWidth = 5;
+
+  ctx.beginPath();
+  ctx.moveTo(-w * 0.5, 74);
+  ctx.lineTo(w * 0.34, 74);
+  ctx.lineTo(w * 0.5, 42);
+  ctx.lineTo(w * 0.43, 88);
+  ctx.lineTo(-w * 0.42, 102);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(241, 245, 249, 0.78)";
+  ctx.strokeStyle = "rgba(15, 23, 42, 0.72)";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.roundRect(-w * 0.36, 36, w * 0.64, 36, 7);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#fb923c";
+  ctx.strokeStyle = "#0f172a";
+  for (let i = 0; i < 4; i++) {
+    const fx = -w * 0.26 + i * w * 0.15;
+    ctx.save();
+    ctx.translate(fx, 14);
+    ctx.rotate(-0.08);
+    ctx.beginPath();
+    ctx.roundRect(-12, -34, 24, 62, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#111827";
+    ctx.fillRect(-12, -34, 24, 10);
+    ctx.restore();
+    ctx.fillStyle = "#fb923c";
+  }
+
+  ctx.strokeStyle = "#bae6fd";
+  ctx.lineWidth = 4;
+  for (let i = 0; i < 15; i++) {
+    const px = -w * 0.33 + i * (w * 0.04);
+    ctx.beginPath();
+    ctx.arc(px, 56, 4, 0, Math.PI * 2);
     ctx.stroke();
   }
   ctx.restore();
@@ -2591,7 +2664,8 @@ function drawRouteTunnel3d(band) {
 
 function drawDecorations() {
   for (const d of level.decorations) {
-    if (!isVisible({ x: d.x, w: 60 }, JUNGLE_LEVEL ? JUNGLE_DECOR_MARGIN : 120)) continue;
+    const decorWidth = d.w || (d.kind === "titanicHull" || d.kind === "titanicBow" || d.kind === "deckRails" ? 560 : 80);
+    if (!isVisible({ x: d.x - decorWidth / 2, w: decorWidth }, JUNGLE_LEVEL ? JUNGLE_DECOR_MARGIN : 160)) continue;
     const staticJungleDecor = JUNGLE_PERF_MODE
       && (d.kind === "vine"
         || d.kind === "leaf"
@@ -2873,6 +2947,157 @@ function drawDecorations() {
       ctx.moveTo(0, -15);
       ctx.lineTo(0, 15);
       ctx.stroke();
+    }
+    if (d.kind === "titanicHull") {
+      drawTitanicShipSilhouette(0, -18, 480, 0.78, true);
+    }
+    if (d.kind === "titanicBow") {
+      ctx.save();
+      ctx.globalAlpha *= 0.9;
+      ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
+      ctx.strokeStyle = "#e0f2fe";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-180, 44);
+      ctx.lineTo(104, 28);
+      ctx.lineTo(190, -12);
+      ctx.lineTo(142, 58);
+      ctx.lineTo(-160, 82);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "rgba(248, 250, 252, 0.76)";
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.roundRect(-138, -2, 196, 36, 7);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#fbbf24";
+      ctx.lineWidth = 4;
+      for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        ctx.arc(-108 + i * 24, 16, 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    if (d.kind === "titanicFunnels") {
+      ctx.save();
+      ctx.globalAlpha *= 0.92;
+      for (let i = 0; i < 4; i++) {
+        ctx.save();
+        ctx.translate(-78 + i * 52, 4 + (i % 2) * 4);
+        ctx.rotate(-0.1);
+        const funnel = ctx.createLinearGradient(0, -58, 0, 42);
+        funnel.addColorStop(0, "#111827");
+        funnel.addColorStop(0.2, "#111827");
+        funnel.addColorStop(0.22, "#fb923c");
+        funnel.addColorStop(1, "#f59e0b");
+        ctx.fillStyle = funnel;
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.roundRect(-15, -58, 30, 96, 7);
+        ctx.fill();
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(226, 232, 240, 0.6)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, -62);
+        ctx.bezierCurveTo(-34, -94, 28, -116, -12, -148);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+    if (d.kind === "deckRails") {
+      ctx.save();
+      ctx.globalAlpha *= 0.88;
+      ctx.strokeStyle = "#e0f2fe";
+      ctx.lineWidth = 5;
+      ctx.lineCap = "round";
+      for (let row = 0; row < 3; row++) {
+        const y = row * 26 - 28;
+        ctx.beginPath();
+        ctx.moveTo(-230, y);
+        ctx.lineTo(230, y - 10);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 4;
+      for (let x = -210; x <= 210; x += 42) {
+        ctx.beginPath();
+        ctx.moveTo(x, -46);
+        ctx.lineTo(x + 8, 42);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(251, 191, 36, 0.56)";
+      for (let x = -188; x <= 176; x += 52) {
+        ctx.beginPath();
+        ctx.roundRect(x, 22, 28, 10, 5);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (d.kind === "lifeboat") {
+      ctx.save();
+      ctx.globalAlpha *= 0.94;
+      ctx.fillStyle = "#fbbf24";
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-112, 14);
+      ctx.quadraticCurveTo(-82, 44, 0, 48);
+      ctx.quadraticCurveTo(82, 44, 112, 14);
+      ctx.lineTo(82, -18);
+      ctx.lineTo(-82, -18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "#e0f2fe";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(-86, -34);
+      ctx.quadraticCurveTo(0, -62, 86, -34);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(15, 23, 42, 0.55)";
+      for (let x = -62; x <= 62; x += 31) {
+        ctx.beginPath();
+        ctx.roundRect(x - 9, 0, 18, 14, 5);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (d.kind === "largeIceberg") {
+      ctx.save();
+      ctx.globalAlpha *= 0.9;
+      const ice = ctx.createLinearGradient(-90, -110, 120, 100);
+      ice.addColorStop(0, "rgba(248, 250, 252, 0.9)");
+      ice.addColorStop(0.55, "rgba(186, 230, 253, 0.72)");
+      ice.addColorStop(1, "rgba(56, 189, 248, 0.44)");
+      ctx.fillStyle = ice;
+      ctx.strokeStyle = "#7dd3fc";
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-100, 88);
+      ctx.lineTo(-52, -58);
+      ctx.lineTo(-8, -112);
+      ctx.lineTo(46, -34);
+      ctx.lineTo(110, 82);
+      ctx.lineTo(36, 52);
+      ctx.lineTo(-22, 98);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(14, 116, 144, 0.45)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-22, -40);
+      ctx.lineTo(12, 78);
+      ctx.moveTo(36, -18);
+      ctx.lineTo(54, 58);
+      ctx.stroke();
+      ctx.restore();
     }
     if (d.kind === "wave") {
       ctx.strokeStyle = mixHex(d.color, "#e0f2fe", 0.22);

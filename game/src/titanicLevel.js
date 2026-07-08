@@ -264,6 +264,24 @@ level.routeBands = [
 ];
 
 const titanicDecor = [];
+const titanicLandmarks = [
+  decor(360, 176, "titanicHull", "#f8fafc", { scale: 1.05, alpha: 0.34, w: scaleW(720) }),
+  decor(1120, 246, "titanicFunnels", "#fb923c", { scale: 0.8, alpha: 0.42, w: scaleW(330) }),
+  decor(1760, 170, "deckRails", "#e0f2fe", { scale: 0.9, alpha: 0.42, w: scaleW(520) }),
+  decor(2760, 236, "lifeboat", "#fbbf24", { scale: 0.76, alpha: 0.48, w: scaleW(310) }),
+  decor(3740, 168, "titanicBow", "#e2e8f0", { scale: 0.9, alpha: 0.38, w: scaleW(560) }),
+  decor(4760, 218, "titanicFunnels", "#fb923c", { scale: 0.82, alpha: 0.4, w: scaleW(330) }),
+  decor(5940, 175, "deckRails", "#bae6fd", { scale: 0.94, alpha: 0.4, w: scaleW(560) }),
+  decor(7240, 242, "lifeboat", "#fde68a", { scale: 0.78, alpha: 0.48, w: scaleW(310) }),
+  decor(8620, 158, "titanicHull", "#f8fafc", { scale: 0.98, alpha: 0.32, w: scaleW(700) }),
+  decor(10160, 182, "titanicBow", "#e2e8f0", { scale: 0.88, alpha: 0.34, w: scaleW(540) }),
+  decor(11620, 248, "lifeboat", "#fbbf24", { scale: 0.78, alpha: 0.48, w: scaleW(310) }),
+  decor(12840, 176, "deckRails", "#bae6fd", { scale: 0.92, alpha: 0.42, w: scaleW(560) }),
+  decor(13780, 260, "largeIceberg", "#dbeafe", { scale: 0.92, alpha: 0.46, w: scaleW(360) }),
+  decor(14820, 202, "largeIceberg", "#e0f2fe", { scale: 1.12, alpha: 0.48, w: scaleW(420) }),
+];
+
+titanicDecor.push(...titanicLandmarks);
 for (let x = 70, i = 0; x < baseLevel.baseWidth; x += 72, i++) {
   const accent = sectionSkins[i % sectionSkins.length][2];
   const upperY = 120 + ((i * 73) % 520);
