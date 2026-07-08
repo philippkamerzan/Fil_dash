@@ -39,6 +39,14 @@ const miniZones = [];
 const routeBands = [];
 const decorations = [];
 const testActions = [];
+const CEILING_BITE_DROPS = new Map([
+  [610, 34],
+  [1320, 34],
+  [1690, 34],
+  [2015, 34],
+  [2295, 34],
+  [2740, 34],
+]);
 
 export const sections = [
   { id: "start", name: "Разгон", x: 0, w: 1050, accent: "#2d68ff", lane: 1120 },
@@ -88,9 +96,10 @@ function addSpikeRun(startX, baseY, groups, gap = 58, spikeW = 34) {
 }
 
 function addCeilingBite(x, railY, w, h = 34, accent = "#2d68ff") {
-  addPlatform(x - 18, railY - 28, w + 36, 28, "decor");
-  addSpike(x, railY, w, h, "down");
-  addDecor(x + w / 2, railY - 52, "spark", accent, { phase: x * 0.01, scale: 0.5 });
+  const y = railY + (CEILING_BITE_DROPS.get(x) || 0);
+  addPlatform(x - 18, y - 28, w + 36, 28, "decor");
+  addSpike(x, y, w, h, "down");
+  addDecor(x + w / 2, y - 52, "spark", accent, { phase: x * 0.01, scale: 0.5 });
 }
 
 function addJump(x, w = 78) {
