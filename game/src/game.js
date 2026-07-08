@@ -10,6 +10,7 @@ const pauseOverlay = document.querySelector("#pauseOverlay");
 const overlayTitle = overlay.querySelector(".overlay-title");
 const levelPickerEl = document.querySelector("#levelPicker");
 const startButton = document.querySelector("#startButton");
+const menuToggle = document.querySelector("#menuToggle");
 const pauseToggle = document.querySelector("#pauseToggle");
 const soundToggle = document.querySelector("#soundToggle");
 const levelNameEl = document.querySelector("#levelName");
@@ -402,7 +403,10 @@ function setupLevelPicker() {
     button.append(code, name);
 
     button.addEventListener("click", () => {
-      if (item.id === LEVEL_ID) return;
+      if (item.id === LEVEL_ID) {
+        if (state.running && state.paused && !state.finished) startGame();
+        return;
+      }
       window.location.assign(levelHref(item));
     });
     levelPickerEl.append(button);
@@ -665,8 +669,26 @@ function startGame() {
   pauseToggle.textContent = "Ⅱ";
   updatePauseUi();
   overlay.classList.add("hidden");
+  setMenuExpanded(false);
   playLevelMusic({ restart: true });
   playTone(420, 0.08, "triangle", 0.05);
+}
+
+function openLevelMenu() {
+  if (TEST_RUN) return;
+  if (state.running && !state.finished) setPaused(true);
+  overlayTitle.textContent = "Уровни";
+  startButton.textContent = state.running && !state.finished ? "Продолжить" : state.finished ? "Еще раз" : "Старт";
+  overlay.classList.remove("hidden");
+  pauseOverlay?.classList.add("hidden");
+  pauseOverlay?.setAttribute("aria-hidden", "true");
+  setMenuExpanded(true);
+  updateRecordsUi();
+}
+
+function setMenuExpanded(expanded) {
+  menuToggle?.classList.toggle("active", expanded);
+  menuToggle?.setAttribute("aria-expanded", String(expanded));
 }
 
 function restartFromCheckpoint(countAttempt = true) {
@@ -2996,6 +3018,15 @@ document.querySelectorAll("[data-control='jump']").forEach((button) => {
   button.addEventListener("pointerup", up);
   button.addEventListener("pointercancel", up);
   button.addEventListener("pointerleave", up);
+});
+
+menuToggle?.addEventListener("click", () => {
+  const menuOpen = !overlay.classList.contains("hidden") && menuToggle.classList.contains("active");
+  if (menuOpen && state.running && state.paused && !state.finished) {
+    startGame();
+    return;
+  }
+  openLevelMenu();
 });
 
 startButton.addEventListener("click", () => {
