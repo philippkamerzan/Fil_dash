@@ -361,6 +361,7 @@ const player = {
 const inputState = {
   pressStartedAt: null,
   lastReleaseAt: -Infinity,
+  screenPointerId: null,
 };
 
 const economy = {
@@ -3253,26 +3254,42 @@ window.addEventListener("keyup", (event) => {
 });
 
 function isUiPointerTarget(target) {
-  return !!target.closest("button, .hud, .overlay, .touch-controls");
+  if (!(target instanceof Element)) return false;
+  const interactive = target.closest("button, a, input, select, textarea, [role='button'], [data-control]");
+  if (interactive) return true;
+  return !!target.closest(".overlay:not(.hidden), .pause-overlay:not(.hidden)");
 }
 
 gameShell.addEventListener("pointerdown", (event) => {
   if (TEST_RUN || isUiPointerTarget(event.target)) return;
   event.preventDefault();
+  inputState.screenPointerId = event.pointerId;
+  try {
+    gameShell.setPointerCapture?.(event.pointerId);
+  } catch {}
   setKey(true);
 });
 
-window.addEventListener("pointerup", () => {
-  if (!TEST_RUN) setKey(false);
+window.addEventListener("pointerup", (event) => {
+  if (TEST_RUN) return;
+  if (inputState.screenPointerId == null || inputState.screenPointerId === event.pointerId) {
+    inputState.screenPointerId = null;
+    setKey(false);
+  }
 });
 
-window.addEventListener("pointercancel", () => {
-  if (!TEST_RUN) setKey(false);
+window.addEventListener("pointercancel", (event) => {
+  if (TEST_RUN) return;
+  if (inputState.screenPointerId == null || inputState.screenPointerId === event.pointerId) {
+    inputState.screenPointerId = null;
+    setKey(false);
+  }
 });
 
 document.querySelectorAll("[data-control='jump']").forEach((button) => {
   const down = (event) => {
     event.preventDefault();
+    inputState.screenPointerId = null;
     button.classList.add("active");
     setKey(true);
   };
