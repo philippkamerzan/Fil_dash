@@ -104,10 +104,64 @@ function trigger(sourceX, y, w, h, type, extra = {}) {
   return { x: scaleX(sourceX), y, w, h, type, ...extra };
 }
 
+function applySectionLayout(layout) {
+  level.sections = layout.map((spec, index) => {
+    const x = scaleX(spec.x);
+    const next = layout[index + 1];
+    const end = next ? scaleX(next.x) : level.world.width;
+    return {
+      ...(level.sections[index] || {}),
+      id: spec.id,
+      name: spec.name,
+      accent: spec.accent,
+      x,
+      w: Math.max(1, end - x),
+      lane: spec.lane,
+      ...(spec.extra || {}),
+    };
+  });
+}
+
 function outsideSourceRange(item, from, to) {
   const left = item.x;
   const right = item.x + (item.w || 0);
   return right < scaleX(from) || left > scaleX(to);
+}
+
+function addSwampGliderSetpiece() {
+  level.hazards = level.hazards.filter((item) => outsideSourceRange(item, 5060, 6820));
+  level.movers = level.movers.filter((item) => outsideSourceRange(item, 5060, 6820));
+  level.boosters = level.boosters.filter((item) => outsideSourceRange(item, 5060, 6820));
+  level.portals = level.portals.filter((item) => item.type === "finish" || outsideSourceRange(item, 5060, 6820));
+
+  level.boosters.push(trigger(4940, 850, 120, 380, "portalDown", {
+    target: { x: scaleX(5180), y: 1040, mode: "plane", gravity: 1 },
+  }));
+  level.portals.push(trigger(6660, 935, 116, 250, "planeOut", {
+    target: { x: scaleX(7240), y: 1056, mode: "cube", gravity: 1 },
+  }));
+  level.hazards.push(
+    ceilingSpike(5120, 830, scaleW(1600), 34, { color: "#17351f" }),
+    floorSpike(5120, 1248, scaleW(1600), 38, { scaleWidth: true, color: "#17351f" }),
+    ceilingSpike(5320, 850, 86, 28, { falling: falling({ warningColor: "#84cc16", fallDistance: 118, triggerDistance: 500 }) }),
+    ceilingSpike(5485, 940, 118, 32, { falling: falling({ warningColor: "#84cc16", fallDistance: 160, triggerDistance: 530 }) }),
+    ceilingSpike(5660, 802, 78, 26, { color: "#365314" }),
+    floorSpike(5840, 1148, 94, 36),
+    floorSpike(6060, 1194, 76, 34),
+    ceilingSpike(6230, 830, 124, 30, { falling: falling({ warningColor: "#22c55e", fallDistance: 145, triggerDistance: 540 }) }),
+  );
+  level.mouths.push(
+    { x: scaleX(5600), top: 780, bottom: 1245, gapY: 830, gapH: 340, color: "#16a34a" },
+    { x: scaleX(6320), top: 780, bottom: 1245, gapY: 852, gapH: 326, color: "#65a30d" },
+  );
+  level.movers.push(
+    mover(5880, 1084, 48, 48, "y", 34, 2.35, 0.6, "#16a34a"),
+    mover(6500, 1088, 46, 48, "y", 34, 2.55, 1.8, "#facc15"),
+  );
+  level.routeBands.push(
+    routeBand(5040, 1720, 960, 240, "horizontal", "#06b6d4", { label: "swamp-glider-corridor" }),
+    routeBand(5260, 1180, 820, 380, "tunnel3d", "#84cc16", { vanishY: 700, label: "swamp-vine-depth" }),
+  );
 }
 
 function replaceOpeningCanopyClimb() {
@@ -211,27 +265,25 @@ level.world = {
   start: { x: baseLevel.world.start.x, y: baseLevel.world.start.y, mode: "cube", gravity: 1 },
 };
 
-const sectionSkins = [
-  ["canopy-gate", "Canopy Gate", "#22c55e"],
-  ["thorn-floor", "Thorn Floor", "#84cc16"],
-  ["snap-plant", "Snap Plant", "#f97316"],
-  ["sun-vine", "Sun Vine", "#facc15"],
-  ["root-drop", "Root Drop", "#fb923c"],
-  ["swamp-flight", "Swamp Flight", "#06b6d4"],
-  ["temple-return", "Temple Roots", "#34d399"],
-  ["root-flip", "Root Flip", "#f97316"],
-  ["canopy-ceiling", "Canopy Ceiling", "#a855f7"],
-  ["waterfall", "Waterfall", "#38bdf8"],
-  ["ghost-leaves", "Ghost Leaves", "#c084fc"],
-  ["mini-thorns", "Mini Thorns", "#f472b6"],
-  ["predator-mix", "Predator Mix", "#fde047"],
-  ["jungle-finish", "Jungle Finish", "#4ade80"],
+const sectionLayout = [
+  { id: "root-gate", name: "Root Gate", x: 0, lane: 1190, accent: "#22c55e" },
+  { id: "canopy-hop", name: "Canopy Hop", x: 560, lane: 1190, accent: "#84cc16" },
+  { id: "thorn-steps", name: "Thorn Steps", x: 1320, lane: 1118, accent: "#f97316" },
+  { id: "vine-hold", name: "Vine Hold", x: 2360, lane: 870, accent: "#facc15" },
+  { id: "root-drop", name: "Root Drop", x: 4380, lane: 1130, accent: "#fb923c" },
+  { id: "swamp-glider", name: "Swamp Glider", x: 5060, lane: 1040, accent: "#06b6d4", extra: { spawnMode: "plane" } },
+  { id: "temple-rise", name: "Temple Rise", x: 6740, lane: 1090, accent: "#34d399" },
+  { id: "hollow-steps", name: "Hollow Steps", x: 7800, lane: 1180, accent: "#f97316" },
+  { id: "canopy-ceiling", name: "Canopy Ceiling", x: 8820, lane: 650, accent: "#a855f7" },
+  { id: "waterfall-drop", name: "Waterfall Drop", x: 10080, lane: 1060, accent: "#38bdf8" },
+  { id: "ghost-leaves", name: "Ghost Leaves", x: 11220, lane: 1120, accent: "#c084fc" },
+  { id: "mini-thorns", name: "Mini Thorns", x: 12260, lane: 1160, accent: "#f472b6" },
+  { id: "predator-mix", name: "Predator Mix", x: 13480, lane: 1080, accent: "#fde047" },
+  { id: "jungle-finish", name: "Jungle Finish", x: 14680, lane: 1190, accent: "#4ade80" },
 ];
 
-level.sections = level.sections.map((section, index) => {
-  const [id, name, accent] = sectionSkins[index] || sectionSkins.at(-1);
-  return { ...section, id, name, accent };
-});
+const sectionSkins = sectionLayout.map((section) => [section.id, section.name, section.accent]);
+applySectionLayout(sectionLayout);
 
 level.routeBands = [
   routeBand(140, 980, 1290, 84, "horizontal", "#22c55e", { label: "canopy-root-floor" }),
@@ -593,6 +645,7 @@ function buildCompleteJungleMap() {
     mover(12080, 800, 52, 58, "y", 40, 2.5, 2.0, "#22c55e"),
   );
   level.testActions.push(jump(4780, 180), jump(8440, 180), jump(11980, 176));
+  addSwampGliderSetpiece();
 
   const bands = [
     [80, 1200, 1325, 84, "horizontal", "#22c55e", { label: "new-root-floor" }],

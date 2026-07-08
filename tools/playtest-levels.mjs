@@ -580,6 +580,20 @@ function runLevel(level, variant) {
   }
 
   function planeTargetY(x) {
+    if (level.number === 2) {
+      if (x < scaleLevelX(5480)) return 990;
+      if (x < scaleLevelX(5840)) return 1060;
+      if (x < scaleLevelX(6160)) return 970;
+      if (x < scaleLevelX(6500)) return 1085;
+      return 1015;
+    }
+    if (level.number === 3) {
+      if (x < scaleLevelX(5480)) return 1060;
+      if (x < scaleLevelX(5840)) return 980;
+      if (x < scaleLevelX(6160)) return 1105;
+      if (x < scaleLevelX(6500)) return 995;
+      return 1070;
+    }
     if (x < scaleLevelX(5520)) return 1060;
     if (x < scaleLevelX(5900)) return 1050;
     if (x < scaleLevelX(6040)) return 1010;

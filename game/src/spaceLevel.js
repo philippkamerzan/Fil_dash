@@ -85,6 +85,24 @@ function trigger(sourceX, y, w, h, type, extra = {}) {
   return { x: scaleX(sourceX), y, w, h, type, ...extra };
 }
 
+function applySectionLayout(layout) {
+  level.sections = layout.map((spec, index) => {
+    const x = scaleX(spec.x);
+    const next = layout[index + 1];
+    const end = next ? scaleX(next.x) : level.world.width;
+    return {
+      ...(level.sections[index] || {}),
+      id: spec.id,
+      name: spec.name,
+      accent: spec.accent,
+      x,
+      w: Math.max(1, end - x),
+      lane: spec.lane,
+      ...(spec.extra || {}),
+    };
+  });
+}
+
 function outsideSourceRange(item, from, to) {
   const left = item.x;
   const right = item.x + (item.w || 0);
@@ -179,27 +197,25 @@ level.world = {
   start: { x: baseLevel.world.start.x, y: baseLevel.world.start.y, mode: "cube", gravity: 1 },
 };
 
-const sectionSkins = [
-  ["launch", "Launch", "#38bdf8"],
-  ["meteor-rhythm", "Meteor rhythm", "#f43f5e"],
-  ["airlock", "Airlock trap", "#fb7185"],
-  ["solar-hold", "Solar hold", "#facc15"],
-  ["warp-drop", "Warp drop", "#fb923c"],
-  ["ship-gate", "Ship gate", "#22d3ee"],
-  ["orbit-return", "Orbit return", "#34d399"],
-  ["gravity-well", "Gravity well", "#f97316"],
-  ["ceiling-orbit", "Ceiling orbit", "#a78bfa"],
-  ["re-entry", "Re-entry", "#38bdf8"],
-  ["ghost-dock", "Ghost dock", "#c084fc"],
-  ["mini-comets", "Mini comets", "#f472b6"],
-  ["nova-mix", "Nova mix", "#fde047"],
-  ["space-finish", "Space finish", "#4ade80"],
+const sectionLayout = [
+  { id: "launch", name: "Launch", x: 0, lane: 1120, accent: "#38bdf8" },
+  { id: "asteroid-hop", name: "Asteroid hop", x: 690, lane: 1048, accent: "#f43f5e" },
+  { id: "meteor-steps", name: "Meteor steps", x: 1540, lane: 1048, accent: "#fb7185" },
+  { id: "solar-drift", name: "Solar drift", x: 2920, lane: 860, accent: "#facc15" },
+  { id: "airlock-drop", name: "Airlock drop", x: 4440, lane: 1060, accent: "#fb923c" },
+  { id: "ship-flight", name: "Ship flight", x: 5060, lane: 1010, accent: "#22d3ee", extra: { spawnMode: "plane" } },
+  { id: "orbit-return", name: "Orbit return", x: 6800, lane: 1040, accent: "#34d399" },
+  { id: "gravity-well", name: "Gravity well", x: 7750, lane: 910, accent: "#f97316" },
+  { id: "ceiling-orbit", name: "Ceiling orbit", x: 8420, lane: 520, accent: "#a78bfa" },
+  { id: "station-drop", name: "Station drop", x: 9840, lane: 1120, accent: "#38bdf8" },
+  { id: "ghost-dock", name: "Ghost dock", x: 11160, lane: 1120, accent: "#c084fc" },
+  { id: "mini-comets", name: "Mini comets", x: 12180, lane: 1110, accent: "#f472b6" },
+  { id: "nova-mix", name: "Nova mix", x: 13260, lane: 1110, accent: "#fde047" },
+  { id: "space-finish", name: "Space finish", x: 14500, lane: 1120, accent: "#4ade80" },
 ];
 
-level.sections = level.sections.map((section, index) => {
-  const [id, name, accent] = sectionSkins[index] || sectionSkins.at(-1);
-  return { ...section, id, name, accent };
-});
+const sectionSkins = sectionLayout.map((section) => [section.id, section.name, section.accent]);
+applySectionLayout(sectionLayout);
 
 level.hazards = [
   ...level.hazards,
@@ -392,6 +408,41 @@ function runHold(sourceX, sourceW) {
   return { x: scaleX(sourceX), w: scaleW(sourceW), kind: "hold" };
 }
 
+function addSpaceFlightSetpiece() {
+  level.hazards = level.hazards.filter((item) => outsideSourceRange(item, 5060, 6740));
+  level.movers = level.movers.filter((item) => outsideSourceRange(item, 5060, 6740));
+  level.boosters = level.boosters.filter((item) => outsideSourceRange(item, 5060, 6740));
+  level.portals = level.portals.filter((item) => item.type === "finish" || outsideSourceRange(item, 5060, 6740));
+
+  level.boosters.push(trigger(4920, 820, 120, 380, "portalDown", {
+    target: { x: scaleX(5140), y: 990, mode: "plane", gravity: 1 },
+  }));
+  level.portals.push(trigger(6620, 900, 116, 250, "planeOut", {
+    target: { x: scaleX(6900), y: 1006, mode: "cube", gravity: 1 },
+  }));
+  level.hazards.push(
+    ceilingSpike(5120, 805, scaleW(1540), 34, { color: "#dbeafe" }),
+    floorSpike(5120, 1210, scaleW(1540), 38, { scaleWidth: true, color: "#dbeafe" }),
+    ceilingSpike(5320, 832, 82, 28, { color: "#bfdbfe", falling: falling({ warningColor: "#38bdf8", fallDistance: 120, triggerDistance: 500 }) }),
+    ceilingSpike(5480, 900, 110, 32, { color: "#bfdbfe", falling: falling({ warningColor: "#38bdf8", fallDistance: 160, triggerDistance: 530 }) }),
+    ceilingSpike(5660, 832, 76, 26, { color: "#dbeafe" }),
+    floorSpike(5980, 1142, 88, 36, { color: "#bfdbfe" }),
+    ceilingSpike(6260, 920, 112, 30, { color: "#bfdbfe", falling: falling({ warningColor: "#60a5fa", fallDistance: 165, triggerDistance: 545 }) }),
+  );
+  level.mouths.push(
+    { x: scaleX(5580), top: 820, bottom: 1205, gapY: 928, gapH: 212, color: "#38bdf8" },
+    { x: scaleX(6220), top: 820, bottom: 1205, gapY: 948, gapH: 214, color: "#818cf8" },
+  );
+  level.movers.push(
+    { x: scaleX(5830), y: 905, w: 48, h: 56, axis: "y", amp: 44, speed: 2.25, phase: 0.9, kind: "movingHazard", color: "#38bdf8" },
+    { x: scaleX(6430), y: 1124, w: 42, h: 46, axis: "y", amp: 34, speed: 2.45, phase: 2.1, kind: "movingHazard", color: "#facc15" },
+  );
+  level.routeBands.push(
+    routeBand(5040, 1660, 955, 210, "horizontal", "#38bdf8", { label: "ship-flight-corridor" }),
+    routeBand(5350, 1150, 820, 360, "tunnel3d", "#818cf8", { vanishY: 720, label: "ship-flight-depth" }),
+  );
+}
+
 function buildCompleteSpaceRunMap() {
   resetGameplayForUniqueSpaceMap();
   level.world = {
@@ -522,6 +573,7 @@ function buildCompleteSpaceRunMap() {
     { x: scaleX(11940), y: 740, w: 42, h: 50, axis: "y", amp: 38, speed: 2.5, phase: 2.1, kind: "movingHazard", color: "#facc15" },
   );
   level.testActions.push(runJump(5500, 170), runJump(8620, 180), runJump(11840, 170));
+  addSpaceFlightSetpiece();
 
   const bands = [
     [80, 950, 1255, 86, "diagonal", "#38bdf8", { dy: -210, label: "new-orbit-takeoff" }],

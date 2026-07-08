@@ -104,6 +104,24 @@ function trigger(sourceX, y, w, h, type, extra = {}) {
   return { x: scaleX(sourceX), y, w, h, type, ...extra };
 }
 
+function applySectionLayout(layout) {
+  level.sections = layout.map((spec, index) => {
+    const x = scaleX(spec.x);
+    const next = layout[index + 1];
+    const end = next ? scaleX(next.x) : level.world.width;
+    return {
+      ...(level.sections[index] || {}),
+      id: spec.id,
+      name: spec.name,
+      accent: spec.accent,
+      x,
+      w: Math.max(1, end - x),
+      lane: spec.lane,
+      ...(spec.extra || {}),
+    };
+  });
+}
+
 function outsideSourceRange(item, from, to) {
   const left = item.x;
   const right = item.x + (item.w || 0);
@@ -211,27 +229,25 @@ level.world = {
   start: { x: baseLevel.world.start.x, y: baseLevel.world.start.y, mode: "cube", gravity: 1 },
 };
 
-const sectionSkins = [
-  ["upper-deck", "Upper Deck", "#38bdf8"],
-  ["ice-warning", "Ice Warning", "#67e8f9"],
-  ["bulkhead-trap", "Bulkhead Trap", "#fb7185"],
-  ["searchlight-hold", "Searchlight Hold", "#facc15"],
-  ["water-drop", "Water Drop", "#60a5fa"],
-  ["boiler-flight", "Boiler Flight", "#f97316"],
-  ["deck-return", "Deck Return", "#22d3ee"],
-  ["tilt-flip", "Tilt Flip", "#f59e0b"],
-  ["ceiling-pipes", "Ceiling Pipes", "#a78bfa"],
-  ["flooded-hall", "Flooded Hall", "#38bdf8"],
-  ["lifeboat-rails", "Lifeboat Rails", "#c084fc"],
-  ["mini-ice", "Mini Ice", "#f472b6"],
-  ["iceberg-mix", "Iceberg Mix", "#fde047"],
-  ["final-iceberg", "Final Iceberg", "#7dd3fc"],
+const sectionLayout = [
+  { id: "lower-deck", name: "Lower Deck", x: 0, lane: 1240, accent: "#38bdf8" },
+  { id: "ice-warning", name: "Ice Warning", x: 620, lane: 1160, accent: "#67e8f9" },
+  { id: "bulkhead-steps", name: "Bulkhead Steps", x: 1540, lane: 1210, accent: "#fb7185" },
+  { id: "searchlight-hold", name: "Searchlight Hold", x: 2920, lane: 890, accent: "#facc15" },
+  { id: "water-drop", name: "Water Drop", x: 4380, lane: 1148, accent: "#60a5fa" },
+  { id: "boiler-flight", name: "Boiler Flight", x: 5060, lane: 1010, accent: "#f97316", extra: { spawnMode: "plane" } },
+  { id: "deck-return", name: "Deck Return", x: 6760, lane: 1110, accent: "#22d3ee" },
+  { id: "tilt-steps", name: "Tilt Steps", x: 7840, lane: 1200, accent: "#f59e0b" },
+  { id: "pipe-ceiling", name: "Pipe Ceiling", x: 9000, lane: 650, accent: "#a78bfa" },
+  { id: "flooded-hall", name: "Flooded Hall", x: 10060, lane: 1080, accent: "#38bdf8" },
+  { id: "lifeboat-rails", name: "Lifeboat Rails", x: 11220, lane: 1180, accent: "#c084fc" },
+  { id: "mini-ice", name: "Mini Ice", x: 12380, lane: 1100, accent: "#f472b6" },
+  { id: "iceberg-mix", name: "Iceberg Mix", x: 13520, lane: 1100, accent: "#fde047" },
+  { id: "final-iceberg", name: "Final Iceberg", x: 14640, lane: 1220, accent: "#7dd3fc" },
 ];
 
-level.sections = level.sections.map((section, index) => {
-  const [id, name, accent] = sectionSkins[index] || sectionSkins.at(-1);
-  return { ...section, id, name, accent };
-});
+const sectionSkins = sectionLayout.map((section) => [section.id, section.name, section.accent]);
+applySectionLayout(sectionLayout);
 
 level.routeBands = [
   routeBand(100, 1080, 1288, 88, "horizontal", "#38bdf8", { label: "upper-deck-run" }),

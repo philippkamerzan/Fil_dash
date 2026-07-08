@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=68";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=69";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -248,8 +248,8 @@ function spawnForSection(section, index) {
       checkpointName: section.name,
     };
   }
-  const mode = index === 5 ? "plane" : "cube";
-  const gravity = index === 8 || section.id === "restore" ? -1 : 1;
+  const mode = section.spawnMode || (level.number === 1 && index === 5 ? "plane" : "cube");
+  const gravity = section.spawnGravity ?? (level.number === 1 && (index === 8 || section.id === "restore") ? -1 : 1);
   const x = checkpointSpawnX(section, gravity);
   const y = checkpointSpawnY(x, section, mode, gravity);
   return {
@@ -3980,6 +3980,20 @@ function planeTargetY(x) {
     if (x < scaleLevelX(6150)) return 995;
     if (x < scaleLevelX(6500)) return 1110;
     return 1040;
+  }
+  if (level.number === 2) {
+    if (x < scaleLevelX(5480)) return 990;
+    if (x < scaleLevelX(5840)) return 1060;
+    if (x < scaleLevelX(6160)) return 970;
+    if (x < scaleLevelX(6500)) return 1085;
+    return 1015;
+  }
+  if (level.number === 3) {
+    if (x < scaleLevelX(5480)) return 1060;
+    if (x < scaleLevelX(5840)) return 980;
+    if (x < scaleLevelX(6160)) return 1105;
+    if (x < scaleLevelX(6500)) return 995;
+    return 1070;
   }
   if (level.number === 4) {
     if (x < scaleLevelX(5480)) return 1030;
