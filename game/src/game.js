@@ -160,8 +160,16 @@ function resolveTestCheckpoint(value) {
 }
 
 function spawnForSection(section, index) {
+  const yellowSpawn = checkpointYellowSpawn(section);
+  if (yellowSpawn) {
+    return {
+      ...yellowSpawn,
+      checkpointId: section.id,
+      checkpointName: section.name,
+    };
+  }
   const mode = index === 5 ? "plane" : "cube";
-  const gravity = index === 8 ? -1 : 1;
+  const gravity = index === 8 || section.id === "restore" ? -1 : 1;
   const x = checkpointSpawnX(section, gravity);
   const y = checkpointSpawnY(x, section, mode, gravity);
   return {
@@ -169,38 +177,87 @@ function spawnForSection(section, index) {
     y,
     mode,
     gravity,
+    onGround: mode !== "plane",
     checkpointId: section.id,
     checkpointName: section.name,
   };
 }
 
+function checkpointYellowSpawn(section) {
+  const zone = level.yellowZones.find((item) =>
+    item.x < section.x + section.w
+    && item.x + item.w > section.x + 120
+  );
+  if (!zone) return null;
+  return {
+    x: zone.x + 44,
+    y: zone.targetY ?? zone.y + zone.h * 0.42,
+    mode: "cube",
+    gravity: 1,
+    onGround: false,
+  };
+}
+
 function checkpointSpawnX(section, gravity) {
-  const sectionLeft = Math.max(WORLD.start.x, section.x + 54);
+  const searchLeft = checkpointSearchLeft(section);
+  const sectionLeft = Math.max(WORLD.start.x, searchLeft);
   const sectionRight = Math.min(playableEndX - 150, section.x + section.w - 90);
   const platforms = solidPlatformsInSection(section)
-    .filter((platform) => gravity === -1 ? platform.y + platform.h <= (section.lane || 760) + 220 : platform.y >= (section.lane || 900) - 220)
     .sort((a, b) => Math.max(a.x, section.x) - Math.max(b.x, section.x));
-  const platform = platforms[0];
-  if (!platform) return clamp(section.x + 90, sectionLeft, Math.max(sectionLeft, sectionRight));
-  const insidePlatform = clamp(Math.max(platform.x + 62, sectionLeft), sectionLeft, Math.min(sectionRight, platform.x + platform.w - PLAYER_SPAWN_SIZE - 12));
+  for (const platform of platforms) {
+    const left = Math.max(platform.x + 12, sectionLeft);
+    const right = Math.min(sectionRight, platform.x + platform.w - PLAYER_SPAWN_SIZE - 12);
+    for (let x = left; x <= right; x += 24) {
+      const y = checkpointSpawnYOnPlatform(platform, section, gravity);
+      if (checkpointCandidateIsSafe(x, y, gravity)) return x;
+    }
+  }
+  const fallbackPlatform = platforms[0];
+  if (!fallbackPlatform) return clamp(section.x + 90, sectionLeft, Math.max(sectionLeft, sectionRight));
+  const insidePlatform = clamp(Math.max(fallbackPlatform.x + 62, sectionLeft), sectionLeft, Math.min(sectionRight, fallbackPlatform.x + fallbackPlatform.w - PLAYER_SPAWN_SIZE - 12));
   return Number.isFinite(insidePlatform) ? insidePlatform : clamp(section.x + 90, sectionLeft, Math.max(sectionLeft, sectionRight));
 }
 
 function checkpointSpawnY(x, section, mode, gravity) {
-  if (mode === "plane") return section.lane ? section.lane - 20 : WORLD.start.y;
+  if (mode === "plane") return section.lane ? section.lane - 100 : WORLD.start.y;
   const support = solidPlatformAt(x, section, gravity);
-  if (support && gravity === -1) return support.y + support.h;
-  if (support) return support.y - PLAYER_SPAWN_SIZE;
+  if (support) return checkpointSpawnYOnPlatform(support, section, gravity);
   const lane = Number.isFinite(section.lane) ? section.lane : WORLD.start.y + PLAYER_SPAWN_SIZE;
   return gravity === -1 ? lane + 40 : lane - PLAYER_SPAWN_SIZE;
 }
 
+function checkpointSpawnYOnPlatform(platform, section, gravity) {
+  if (gravity === -1) return platform.y + platform.h;
+  return platform.y - PLAYER_SPAWN_SIZE;
+}
+
 function solidPlatformsInSection(section) {
+  const searchLeft = checkpointSearchLeft(section);
   return level.platforms.filter((platform) =>
     platform.kind !== "ghost-pass"
     && platform.kind !== "decor"
-    && platform.x + platform.w > section.x + 4
+    && platform.x + platform.w > searchLeft + 4
     && platform.x < section.x + section.w - 4
+  );
+}
+
+function checkpointSearchLeft(section) {
+  if (section.lane < 700) return section.x + 850;
+  const actionWindow = checkpointNeedsHoldSetup(section) ? 780 : 220;
+  const firstAction = level.testActions
+    .filter((action) => {
+      if (action.x >= section.x - actionWindow && action.x < section.x + 180) return true;
+      return action.kind === "hold" && action.x + action.w > section.x - actionWindow && action.x < section.x + 180;
+    })
+    .sort((a, b) => a.x - b.x)[0];
+  const actionLead = firstAction ? firstAction.x - 260 : section.x + 54;
+  return Math.max(WORLD.start.x, Math.min(section.x + 54, actionLead));
+}
+
+function checkpointNeedsHoldSetup(section) {
+  return level.yellowZones.some((zone) =>
+    zone.x < section.x + section.w
+    && zone.x + zone.w > section.x + 120
   );
 }
 
@@ -209,6 +266,31 @@ function solidPlatformAt(x, section, gravity) {
     .filter((platform) => x + PLAYER_SPAWN_SIZE > platform.x && x < platform.x + platform.w)
     .sort((a, b) => gravity === -1 ? (b.y + b.h) - (a.y + a.h) : a.y - b.y);
   return platforms[0] || null;
+}
+
+function checkpointCandidateIsSafe(x, y, gravity) {
+  const body = { x, y, w: PLAYER_SPAWN_SIZE, h: PLAYER_SPAWN_SIZE };
+  const immediate = { x: x - 14, y: y - 14, w: PLAYER_SPAWN_SIZE + 28, h: PLAYER_SPAWN_SIZE + 28 };
+  for (const hazard of level.hazards) {
+    const hit = staticSpikeHitRect(hazard);
+    if (rectsOverlap(immediate, hit)) return false;
+  }
+  for (const mover of level.movers) {
+    const moverRect = { x: mover.x - Math.abs(mover.axis === "x" ? mover.amp || 0 : 0), y: mover.y - Math.abs(mover.axis === "y" ? mover.amp || 0 : 0), w: mover.w + Math.abs(mover.axis === "x" ? mover.amp || 0 : 0) * 2, h: mover.h + Math.abs(mover.axis === "y" ? mover.amp || 0 : 0) * 2 };
+    if (rectsOverlap(body, moverRect)) return false;
+  }
+  return true;
+}
+
+function staticSpikeHitRect(hazard) {
+  const insetX = Math.min(6, hazard.w * 0.08);
+  const activeH = hazard.h - Math.min(6, hazard.h * 0.18);
+  return {
+    x: hazard.x + insetX,
+    y: hazard.dir === "down" ? hazard.y : hazard.y + hazard.h - activeH,
+    w: Math.max(4, hazard.w - insetX * 2),
+    h: activeH,
+  };
 }
 
 function levelProgress() {
@@ -838,7 +920,7 @@ function restartFromCheckpoint(countAttempt = true) {
   player.vy = 0;
   player.mode = spawn.mode;
   player.gravity = spawn.gravity;
-  player.onGround = false;
+  player.onGround = !!spawn.onGround;
   player.angle = 0;
   player.deadTimer = 0;
   player.jumpLatch = false;
@@ -3106,11 +3188,18 @@ function seesMoverAhead() {
 }
 
 function planeTargetY(x) {
-  if (x < scaleLevelX(5520)) return 1060;
-  if (x < scaleLevelX(5900)) return 1050;
-  if (x < scaleLevelX(6040)) return 1010;
-  if (x < scaleLevelX(6500)) return 1120;
-  return 1070;
+  if (level.number === 1) {
+    if (x < scaleLevelX(5520)) return 1015;
+    if (x < scaleLevelX(5900)) return 1085;
+    if (x < scaleLevelX(6150)) return 995;
+    if (x < scaleLevelX(6500)) return 1110;
+    return 1040;
+  }
+  if (x < scaleLevelX(5520)) return 990;
+  if (x < scaleLevelX(5900)) return 1010;
+  if (x < scaleLevelX(6040)) return 990;
+  if (x < scaleLevelX(6500)) return 1000;
+  return 1040;
 }
 
 window.addEventListener("resize", resize);

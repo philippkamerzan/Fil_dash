@@ -479,7 +479,7 @@ function buildCompleteJungleMap() {
     [7100, 1090, 34, true], [7490, 1090, 32, false], [8130, 1090, 34, true],
     [8750, 1180, 34, false], [9340, 1180, 34, true], [10150, 1060, 32, false],
     [10570, 1060, 78, false], [11100, 1060, 30, true], [11680, 1160, 34, false],
-    [12320, 1160, 34, true], [13030, 1080, 32, false], [13450, 1080, 34, true],
+    [12320, 1160, 34, true], [13145, 1080, 32, false], [13450, 1080, 34, true],
     [13940, 1080, 74, false], [14720, 1190, 34, true],
   ];
   for (const [x, platformY, w, hidden] of floorHazards) {
@@ -489,7 +489,7 @@ function buildCompleteJungleMap() {
 
   const ceilingHazards = [
     [540, 930, 96], [1110, 900, 92], [2280, 870, 104],
-    [3340, 910, 88], [4420, 875, 96], [5240, 870, 104],
+    [3340, 790, 88], [4420, 875, 96], [5240, 870, 104],
     [6480, 955, 90], [7280, 815, 96], [7940, 805, 102],
     [9240, 940, 88], [10380, 790, 112], [11860, 910, 94],
     [13320, 840, 108], [14220, 845, 100],
@@ -557,7 +557,7 @@ function buildCompleteJungleMap() {
 
   level.testActions.push(
     jump(1060, 220), jump(1180, 220), jump(6680, 230), jump(9720, 220),
-    jump(12600, 210), jump(14320, 190),
+    jump(12600, 210), jump(12820, 280), jump(14320, 190),
   );
   level.portals.push(trigger(15120, 1010, 120, 200, "finish"));
   level.testActions.sort((a, b) => a.x - b.x);
