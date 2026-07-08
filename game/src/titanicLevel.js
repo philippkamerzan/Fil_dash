@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./level.js?v=65";
+import { level as baseLevel } from "./level.js?v=78";
 
 const clone = (value) => structuredClone(value);
 const scaleX = (x) => Math.round(x * baseLevel.scale);
@@ -489,7 +489,7 @@ function buildCompleteTitanicMap() {
   }
 
   const floorHazards = [
-    [280, 1240, 34, false], [620, 1240, 32, true], [970, 1240, 72, false],
+    [280, 1240, 34, false], [620, 1240, 32, true], [820, 1240, 28, true], [970, 1240, 72, false],
     [1280, 1160, 34, true], [1620, 1160, 34, false], [2050, 1160, 76, false],
     [2580, 1210, 34, true], [3040, 1210, 34, false], [3460, 1210, 80, false],
     [3860, 1210, 34, true], [4320, 1148, 34, false], [5200, 1148, 34, true],
@@ -497,8 +497,8 @@ function buildCompleteTitanicMap() {
     [7190, 1110, 34, true], [7520, 1110, 34, false], [8100, 1110, 32, true],
     [8700, 1200, 34, false], [9400, 1200, 34, true], [10180, 1080, 34, false],
     [10620, 1080, 78, false], [11160, 1080, 34, true], [11760, 1180, 34, false],
-    [12580, 1180, 34, true], [13295, 1100, 34, false], [13610, 1100, 34, true],
-    [14080, 1100, 78, false], [14850, 1220, 34, true],
+    [12580, 1180, 34, true], [13140, 1100, 28, true], [13295, 1100, 34, false], [13610, 1100, 34, true],
+    [14080, 1100, 78, false], [14680, 1220, 28, true], [14850, 1220, 34, true],
   ];
   for (const [x, platformY, w, hidden] of floorHazards) {
     level.hazards.push(floorSpike(x, platformY - 34, w, 34, hidden ? { popup: popup({ triggerDistance: 225 }) } : {}));

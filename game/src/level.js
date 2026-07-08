@@ -191,6 +191,7 @@ addCeilingBite(610, 890, 96, 34, "#2d68ff");
 addSpike(780, 1086, 34, 34, "up");
 addSpike(930, 1086, 30, 34, "up");
 addCeilingBite(995, 900, 88, 34, "#2d68ff");
+addPopupSpike(1080, 1086, 28, 34, "up", { popup: { triggerDistance: 255, extendDistance: 122 } });
 addSpike(1164, 1086, 30, 34, "up");
 addJump(150);
 addJump(292);
@@ -199,6 +200,7 @@ addJump(742);
 addJump(902);
 addJump(960, 220);
 addJump(1000);
+addJump(1052);
 addJump(1135);
 boosters.push(trigger(825, 1057, 66, 66, "blueBoost", { power: 760 }));
 speedZones.push(trigger(900, 1014, 92, 132, "fast", { speed: 410 }));
@@ -210,6 +212,7 @@ addSpikeRun(1240, 1120, [1, 2, 1, 2], 190);
 addCeilingBite(1320, 900, 86, 34, "#22c7d7");
 addSpike(1478, 1086, 30, 34, "up");
 addCeilingBite(1690, 890, 112, 34, "#22c7d7");
+addPopupSpike(1745, 1086, 26, 34, "up", { popup: { triggerDistance: 250, extendDistance: 120 } });
 addPopupSpike(1900, 1086, 32, 34, "up", { popup: { triggerDistance: 340, extendDistance: 145 } });
 addCeilingBite(2015, 905, 96, 34, "#22c7d7");
 addSpike(2185, 1086, 38, 34, "up");
@@ -217,6 +220,7 @@ addJump(1180);
 addJump(1398);
 addJump(1460);
 addJump(1590);
+addJump(1712);
 addJump(1812);
 addJump(2040);
 addJump(2145);
@@ -267,6 +271,7 @@ portals.push(trigger(6715, 982, 104, 170, "planeOut", {
 addPlatform(6880, 930, 1210, 44);
 addSpike(7040, 896, 36, 34, "up");
 addSpikeRun(7240, 930, [1, 1, 2, 1], 178, 32);
+addPopupSpike(7520, 896, 28, 34, "up", { popup: { triggerDistance: 245, extendDistance: 120 } });
 addPopupSpike(7875, 896, 30, 34, "up", { popup: { triggerDistance: 330, extendDistance: 130 } });
 orbs.push(
   trigger(7270, 790, 46, 46, "jumpOrb", { power: 620, color: "#34d399" }),
@@ -275,6 +280,7 @@ orbs.push(
 addJump(7220);
 addJump(7250, 220);
 addJump(7340, 260);
+addJump(7488);
 addJump(7630);
 addJump(7788, 120);
 addJump(7880);
@@ -287,6 +293,7 @@ portals.push(trigger(8110, 806, 104, 160, "gravityFlip", {
   target: { x: 8270, y: 542, mode: "cube", gravity: -1 },
 }));
 addPlatform(8240, 500, 470, 42);
+addSpike(8350, 542, 42, 24, "down");
 addPlatform(8720, 500, 460, 42);
 addPlatform(9220, 500, 780, 42);
 addSpike(9260, 542, 52, 24, "down");
@@ -297,6 +304,7 @@ addSpike(9300, 362, 118, 24, "up");
 addSpike(9695, 362, 90, 24, "up");
 movers.push({ x: 9520, y: 760, w: 58, h: 58, axis: "x", amp: 90, speed: 1.35, phase: 0.2, kind: "movingHazard" });
 gravityRings.push(trigger(9550, 620, 58, 58, "gravityRing", { targetGravity: -1, impulse: 520 }));
+addHold(8300, 170);
 addHold(8420, 180);
 addHold(8750, 380);
 addHold(9260, 120);
@@ -368,6 +376,7 @@ trampolines.push(trigger(14460, 948, 78, 30, "trampoline", { vx: 438, vy: -510 }
 addSpike(13405, 946, 90, 34, "up");
 addPopupSpike(13680, 692, 120, 14, "down", { popup: { triggerDistance: 230, extendDistance: 160 } });
 addSpike(13920, 946, 42, 34, "up");
+addPopupSpike(14125, 946, 30, 34, "up", { popup: { triggerDistance: 235, extendDistance: 118 } });
 movers.push({ x: 14370, y: 1100, w: 62, h: 62, axis: "y", amp: 44, speed: 1.9, phase: 2.1, kind: "movingHazard" });
 movers.push({ x: 13780, y: 846, w: 46, h: 52, axis: "x", amp: 76, speed: 1.7, phase: 1.3, kind: "movingHazard" });
 addJump(13310, 140);
@@ -375,6 +384,7 @@ addHold(13515, 70);
 addJump(13610, 110);
 addJump(13885, 160);
 addHold(13940, 500);
+addJump(14092);
 addJump(14420, 150);
 
 // Section 14: finish portal with a final safe runway.

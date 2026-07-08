@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./level.js?v=65";
+import { level as baseLevel } from "./level.js?v=78";
 
 const clone = (value) => structuredClone(value);
 
@@ -426,11 +426,11 @@ function buildCompleteSpaceRunMap() {
     [1510, 1048, 68, false], [2140, 1120, 30, true], [2685, 1120, 42, false],
     [3330, 1120, 32, true], [3660, 1120, 32, false], [4130, 1120, 30, true],
     [4640, 1060, 34, false], [5360, 1060, 30, true], [5905, 1135, 36, false],
-    [6280, 1135, 70, false], [6810, 1135, 30, true], [7340, 1040, 32, true],
+    [6280, 1135, 70, false], [6810, 1135, 30, true], [7205, 1040, 28, true], [7340, 1040, 32, true],
     [7725, 1040, 34, false], [8460, 1040, 30, true], [9150, 1120, 36, false],
     [9720, 1120, 32, true], [10460, 1120, 30, false], [10920, 1120, 68, false],
     [11640, 1120, 30, true], [12140, 1110, 34, false], [12760, 1110, 34, true],
-    [13520, 1110, 34, false], [13840, 1110, 34, true], [14360, 1110, 72, false],
+    [13520, 1110, 34, false], [13840, 1110, 34, true], [14195, 1110, 30, true], [14360, 1110, 72, false],
     [15020, 1120, 32, true],
   ];
   for (const [x, platformY, w, hidden] of floorHazards) {
