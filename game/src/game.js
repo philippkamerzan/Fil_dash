@@ -1,4 +1,4 @@
-import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=62";
+import { DEFAULT_LEVEL_ID, getLevelById, levels } from "./levels.js?v=64";
 import { startSpace3dLayer } from "./space3d.js?v=3";
 
 const canvas = document.querySelector("#game");
@@ -2429,12 +2429,19 @@ function drawRouteTunnel3d(band) {
 function drawDecorations() {
   for (const d of level.decorations) {
     if (!isVisible({ x: d.x, w: 60 }, JUNGLE_LEVEL ? JUNGLE_DECOR_MARGIN : 120)) continue;
-    const staticJungleDecor = JUNGLE_PERF_MODE && (d.kind === "vine" || d.kind === "leaf" || d.kind === "flower" || d.kind === "root");
+    const staticJungleDecor = JUNGLE_PERF_MODE
+      && (d.kind === "vine"
+        || d.kind === "leaf"
+        || d.kind === "flower"
+        || d.kind === "root"
+        || d.kind === "firefly"
+        || d.kind === "leafMoth"
+        || d.kind === "canopySilhouette");
     const pulse = staticJungleDecor ? 1 : 1 + Math.sin(state.time * 4 + d.phase) * 0.08;
     ctx.save();
     ctx.translate(d.x, d.y);
     ctx.scale((d.scale || 1) * pulse, (d.scale || 1) * pulse);
-    ctx.globalAlpha = 0.68;
+    ctx.globalAlpha = d.alpha ?? 0.68;
     ctx.strokeStyle = d.color;
     ctx.fillStyle = d.color;
     ctx.lineWidth = 5;
@@ -2645,6 +2652,47 @@ function drawDecorations() {
       ctx.quadraticCurveTo(-12, -18, 8, 6);
       ctx.quadraticCurveTo(24, 24, 42, -6);
       ctx.stroke();
+    }
+    if (d.kind === "firefly") {
+      ctx.shadowColor = d.color;
+      ctx.shadowBlur = JUNGLE_PERF_MODE ? 0 : 14;
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      for (let i = 0; i < 4; i++) {
+        const a = i * Math.PI / 2 + d.phase;
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * 18, Math.sin(a * 1.3) * 11, 4 + (i % 2), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    }
+    if (d.kind === "leafMoth") {
+      ctx.fillStyle = mixHex(d.color, "#ffffff", 0.2);
+      ctx.strokeStyle = mixHex(d.color, "#064e3b", 0.18);
+      ctx.lineWidth = 2;
+      ctx.rotate(Math.sin(d.phase) * 0.2);
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(side * 16, -2, 22, 11, side * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.strokeStyle = mixHex(d.color, "#fefce8", 0.4);
+      ctx.beginPath();
+      ctx.moveTo(0, -15);
+      ctx.lineTo(0, 17);
+      ctx.stroke();
+    }
+    if (d.kind === "canopySilhouette") {
+      ctx.fillStyle = d.color;
+      ctx.beginPath();
+      ctx.moveTo(-38, 4);
+      ctx.quadraticCurveTo(-20, -14, -4, 2);
+      ctx.quadraticCurveTo(14, -18, 38, 4);
+      ctx.quadraticCurveTo(10, 12, -38, 4);
+      ctx.fill();
     }
     if (d.kind === "porthole") {
       ctx.fillStyle = "rgba(251, 191, 36, 0.32)";

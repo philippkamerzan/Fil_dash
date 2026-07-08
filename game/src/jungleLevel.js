@@ -250,6 +250,27 @@ for (let x = 80, i = 0; x < baseLevel.baseWidth; x += 68, i++) {
       scale: 0.46 + (i % 4) * 0.1,
     }),
   );
+  if (i % 5 === 0) {
+    jungleDecor.push(decor(x + 46, 180 + ((i * 97) % 760), "firefly", "#fde047", {
+      phase: i * 0.41,
+      scale: 0.7 + (i % 3) * 0.1,
+      alpha: 0.62,
+    }));
+  }
+  if (i % 7 === 2) {
+    jungleDecor.push(decor(x + 22, 140 + ((i * 109) % 620), "leafMoth", i % 2 ? "#fb7185" : "#22d3ee", {
+      phase: i * 0.36,
+      scale: 0.54 + (i % 4) * 0.09,
+      alpha: 0.54,
+    }));
+  }
+  if (i % 11 === 4) {
+    jungleDecor.push(decor(x + 58, 120 + ((i * 131) % 560), "canopySilhouette", "#065f46", {
+      phase: i * 0.24,
+      scale: 0.58 + (i % 3) * 0.08,
+      alpha: 0.3,
+    }));
+  }
 }
 
 level.decorations = jungleDecor;
