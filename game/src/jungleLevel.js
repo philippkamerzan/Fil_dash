@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./spaceLevel.js?v=2";
+import { level as baseLevel } from "./level.js?v=65";
 
 const clone = (value) => structuredClone(value);
 const scaleX = (x) => Math.round(x * baseLevel.scale);
@@ -83,6 +83,101 @@ function jump(sourceX, w = 130) {
 
 function hold(sourceX, sourceW) {
   return { x: scaleX(sourceX), w: scaleW(sourceW), kind: "hold" };
+}
+
+function platform(sourceX, y, sourceW, h = 46, kind = "platform") {
+  return { x: scaleX(sourceX), y, w: scaleW(sourceW), h, kind };
+}
+
+function trigger(sourceX, y, w, h, type, extra = {}) {
+  return { x: scaleX(sourceX), y, w, h, type, ...extra };
+}
+
+function outsideSourceRange(item, from, to) {
+  const left = item.x;
+  const right = item.x + (item.w || 0);
+  return right < scaleX(from) || left > scaleX(to);
+}
+
+function replaceOpeningCanopyClimb() {
+  const from = -160;
+  const to = 3050;
+  for (const key of [
+    "platforms",
+    "hazards",
+    "boosters",
+    "downDots",
+    "traps",
+    "yellowZones",
+    "trampolines",
+    "speedZones",
+    "orbs",
+    "autoPads",
+    "gravityRings",
+    "movers",
+  ]) {
+    level[key] = level[key].filter((item) => outsideSourceRange(item, from, to));
+  }
+  level.routeBands = level.routeBands.filter((item) => outsideSourceRange(item, from, to));
+  level.testActions = level.testActions.filter((item) => outsideSourceRange(item, from, to));
+  level.world = {
+    ...level.world,
+    start: { x: baseLevel.world.start.x, y: 1086, mode: "cube", gravity: 1 },
+  };
+
+  level.platforms.push(
+    platform(-160, 1120, 820),
+    platform(560, 1120, 390),
+    platform(840, 1048, 620),
+    platform(1360, 980, 560),
+    platform(1840, 1048, 500),
+    platform(2260, 1120, 850),
+  );
+  level.hazards.push(
+    floorSpike(250, 1086, 34, 34),
+    ceilingSpike(610, 850, 92, 30),
+    floorSpike(980, 1014, 30, 34, { popup: popup({ triggerDistance: 245 }) }),
+    floorSpike(1460, 946, 64, 34),
+    ceilingSpike(1685, 800, 112, 30),
+    floorSpike(2075, 1014, 32, 34, { popup: popup({ triggerDistance: 235 }) }),
+    floorSpike(2585, 1086, 42, 34),
+    ceilingSpike(2810, 900, 92, 30),
+  );
+  level.orbs.push(
+    trigger(1240, 895, 46, 46, "jumpOrb", { power: 610, color: "#22c55e" }),
+    trigger(1985, 945, 46, 46, "jumpOrb", { power: 560, color: "#facc15" }),
+  );
+  level.speedZones.push(
+    trigger(520, 1014, 90, 132, "fast", { speed: 450 }),
+    trigger(2350, 1014, 90, 132, "fast", { speed: 472 }),
+  );
+  level.yellowZones.push({
+    x: scaleX(3120),
+    y: 760,
+    w: scaleW(1320),
+    h: 340,
+    type: "yellowFlight",
+    targetY: 805,
+    minSpeed: 430,
+  });
+  level.movers.push(
+    mover(1720, 835, 46, 54, "y", 54, 2.05, 0.7, "#16a34a"),
+  );
+  level.routeBands.push(
+    routeBand(80, 900, 1288, 84, "diagonal", "#22c55e", { dy: -230, label: "canopy-opening-rise" }),
+    routeBand(980, 880, 780, 330, "tunnel3d", "#84cc16", { vanishY: 650, label: "leaf-canopy-depth" }),
+    routeBand(2100, 920, 1220, 80, "diagonal", "#f97316", { dy: 210, label: "root-opening-drop" }),
+  );
+  level.testActions.push(
+    jump(230, 130),
+    jump(720, 210),
+    jump(950, 140),
+    jump(1210, 190),
+    jump(1450, 150),
+    jump(1935, 190),
+    jump(2050, 145),
+    jump(2540, 170),
+  );
 }
 
 export const level = clone(baseLevel);
@@ -290,3 +385,24 @@ level.testActions = [
   jump(12390), jump(12695), jump(12855, 240), jump(12930, 190), jump(13200), jump(13445), hold(13650, 420),
   jump(14250), jump(14415), jump(14785), jump(14900), jump(14930),
 ].sort((a, b) => a.x - b.x);
+
+replaceOpeningCanopyClimb();
+level.hazards = level.hazards.filter((hazard) =>
+  !(
+    (hazard.y === 896 || hazard.y === 750)
+    && hazard.x > scaleX(7780)
+    && hazard.x < scaleX(7925)
+  )
+  && !(
+    hazard.dir === "down"
+    && hazard.y === 542
+    && hazard.x > scaleX(9200)
+    && hazard.x < scaleX(9900)
+  )
+  && !(
+    hazard.y === 1006
+    && hazard.x > scaleX(14780)
+    && hazard.x < scaleX(14900)
+  )
+);
+level.testActions.sort((a, b) => a.x - b.x);

@@ -1,4 +1,4 @@
-import { level as baseLevel } from "./spaceLevel.js?v=2";
+import { level as baseLevel } from "./level.js?v=65";
 
 const clone = (value) => structuredClone(value);
 const scaleX = (x) => Math.round(x * baseLevel.scale);
@@ -83,6 +83,101 @@ function jump(sourceX, w = 128) {
 
 function hold(sourceX, sourceW) {
   return { x: scaleX(sourceX), w: scaleW(sourceW), kind: "hold" };
+}
+
+function platform(sourceX, y, sourceW, h = 46, kind = "platform") {
+  return { x: scaleX(sourceX), y, w: scaleW(sourceW), h, kind };
+}
+
+function trigger(sourceX, y, w, h, type, extra = {}) {
+  return { x: scaleX(sourceX), y, w, h, type, ...extra };
+}
+
+function outsideSourceRange(item, from, to) {
+  const left = item.x;
+  const right = item.x + (item.w || 0);
+  return right < scaleX(from) || left > scaleX(to);
+}
+
+function replaceOpeningTiltedDeck() {
+  const from = -160;
+  const to = 3050;
+  for (const key of [
+    "platforms",
+    "hazards",
+    "boosters",
+    "downDots",
+    "traps",
+    "yellowZones",
+    "trampolines",
+    "speedZones",
+    "orbs",
+    "autoPads",
+    "gravityRings",
+    "movers",
+  ]) {
+    level[key] = level[key].filter((item) => outsideSourceRange(item, from, to));
+  }
+  level.routeBands = level.routeBands.filter((item) => outsideSourceRange(item, from, to));
+  level.testActions = level.testActions.filter((item) => outsideSourceRange(item, from, to));
+  level.world = {
+    ...level.world,
+    start: { x: baseLevel.world.start.x, y: 1126, mode: "cube", gravity: 1 },
+  };
+
+  level.platforms.push(
+    platform(-160, 1160, 780),
+    platform(560, 1160, 430),
+    platform(900, 1100, 560),
+    platform(1380, 1100, 470),
+    platform(1760, 1100, 520),
+    platform(2220, 1120, 900),
+  );
+  level.hazards.push(
+    floorSpike(285, 1126, 32, 34),
+    ceilingSpike(590, 900, 86, 28),
+    floorSpike(1080, 1066, 30, 34, { popup: popup({ triggerDistance: 245 }) }),
+    floorSpike(1510, 1066, 58, 34),
+    ceilingSpike(1665, 840, 106, 30),
+    floorSpike(1990, 1066, 32, 34, { popup: popup({ triggerDistance: 235 }) }),
+    floorSpike(2570, 1086, 42, 34),
+    ceilingSpike(2815, 900, 92, 30),
+  );
+  level.orbs.push(
+    trigger(1225, 955, 46, 46, "jumpOrb", { power: 590, color: "#7dd3fc" }),
+    trigger(1920, 900, 46, 46, "jumpOrb", { power: 555, color: "#fbbf24" }),
+  );
+  level.speedZones.push(
+    trigger(500, 1054, 90, 132, "fast", { speed: 456 }),
+    trigger(2300, 1014, 90, 132, "fast", { speed: 480 }),
+  );
+  level.yellowZones.push({
+    x: scaleX(3120),
+    y: 760,
+    w: scaleW(1320),
+    h: 340,
+    type: "yellowFlight",
+    targetY: 805,
+    minSpeed: 430,
+  });
+  level.movers.push(
+    mover(1680, 900, 50, 56, "y", 48, 2.2, 0.4, "#38bdf8"),
+  );
+  level.routeBands.push(
+    routeBand(80, 880, 1328, 86, "diagonal", "#38bdf8", { dy: -190, label: "deck-opening-lift" }),
+    routeBand(1040, 900, 835, 320, "tunnel3d", "#facc15", { vanishY: 690, label: "searchlight-opening-depth" }),
+    routeBand(2080, 960, 1215, 80, "diagonal", "#60a5fa", { dy: 230, label: "deck-opening-drop" }),
+  );
+  level.testActions.push(
+    jump(245, 130),
+    jump(760, 210),
+    jump(1060, 140),
+    jump(1190, 190),
+    jump(1495, 150),
+    jump(1880, 190),
+    jump(1970, 140),
+    jump(2530, 170),
+  );
 }
 
 export const level = clone(baseLevel);
@@ -308,3 +403,24 @@ level.testActions = [
   jump(12570), jump(12780), jump(12885), jump(12990), jump(13190), jump(13390), jump(13555),
   hold(13690, 450), jump(14140), jump(14200), jump(14545), jump(14760), jump(14925), jump(14980),
 ].sort((a, b) => a.x - b.x);
+
+replaceOpeningTiltedDeck();
+level.hazards = level.hazards.filter((hazard) =>
+  !(
+    (hazard.y === 896 || hazard.y === 750)
+    && hazard.x > scaleX(7780)
+    && hazard.x < scaleX(7925)
+  )
+  && !(
+    hazard.dir === "down"
+    && hazard.y === 542
+    && hazard.x > scaleX(9200)
+    && hazard.x < scaleX(9900)
+  )
+  && !(
+    hazard.y === 1006
+    && hazard.x > scaleX(14780)
+    && hazard.x < scaleX(14900)
+  )
+);
+level.testActions.sort((a, b) => a.x - b.x);

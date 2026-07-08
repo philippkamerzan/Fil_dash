@@ -66,6 +66,88 @@ function decor(sourceX, y, kind, color, extra = {}) {
   };
 }
 
+function platform(sourceX, y, sourceW, h = 46, kind = "platform") {
+  return { x: scaleX(sourceX), y, w: scaleW(sourceW), h, kind };
+}
+
+function trigger(sourceX, y, w, h, type, extra = {}) {
+  return { x: scaleX(sourceX), y, w, h, type, ...extra };
+}
+
+function outsideSourceRange(item, from, to) {
+  const left = item.x;
+  const right = item.x + (item.w || 0);
+  return right < scaleX(from) || left > scaleX(to);
+}
+
+function replaceOpeningOrbitDeck() {
+  const from = -160;
+  const to = 3050;
+  for (const key of [
+    "platforms",
+    "hazards",
+    "boosters",
+    "downDots",
+    "traps",
+    "yellowZones",
+    "trampolines",
+    "speedZones",
+    "orbs",
+    "autoPads",
+    "gravityRings",
+    "movers",
+  ]) {
+    level[key] = level[key].filter((item) => outsideSourceRange(item, from, to));
+  }
+  level.routeBands = level.routeBands.filter((item) => outsideSourceRange(item, from, to));
+  level.testActions = level.testActions.filter((item) => outsideSourceRange(item, from, to));
+  level.world = {
+    ...level.world,
+    start: { x: baseLevel.world.start.x, y: 1011, mode: "cube", gravity: 1 },
+  };
+
+  level.platforms.push(
+    platform(-160, 1045, 760),
+    platform(520, 1045, 520),
+    platform(930, 980, 560),
+    platform(1410, 980, 520),
+    platform(1860, 1045, 520),
+    platform(2310, 1120, 820),
+  );
+  level.hazards.push(
+    floorSpike(330, 1011, 30, 34),
+    ceilingSpike(660, 840, 88, 30),
+    floorSpike(1160, 946, 30, 34, { popup: popup({ triggerDistance: 255 }) }),
+    floorSpike(1510, 946, 62, 34),
+    ceilingSpike(1745, 812, 112, 30),
+    floorSpike(2135, 1011, 32, 34, { popup: popup({ triggerDistance: 250 }) }),
+    floorSpike(2580, 1086, 44, 34),
+    ceilingSpike(2800, 900, 92, 30),
+  );
+  level.orbs.push(
+    trigger(1215, 830, 46, 46, "jumpOrb", { power: 620, color: "#38bdf8" }),
+    trigger(1980, 910, 46, 46, "jumpOrb", { power: 585, color: "#fde047" }),
+  );
+  level.speedZones.push(
+    trigger(560, 940, 92, 120, "fast", { speed: 448 }),
+    trigger(2360, 1014, 92, 132, "fast", { speed: 460 }),
+  );
+  level.routeBands.push(
+    routeBand(120, 820, 1190, 82, "diagonal", "#38bdf8", { dy: -210, label: "orbit-opening-rise" }),
+    routeBand(930, 1010, 800, 290, "tunnel3d", "#f43f5e", { vanishY: 710, label: "meteor-opening-tunnel" }),
+    routeBand(2100, 900, 1280, 80, "diagonal", "#facc15", { dy: 190, label: "re-entry-opening-drop" }),
+  );
+  level.testActions.push(
+    { x: scaleX(285), w: 120, kind: "jump" },
+    { x: scaleX(835), w: 170, kind: "jump" },
+    { x: scaleX(1110), w: 190, kind: "jump" },
+    { x: scaleX(1480), w: 150, kind: "jump" },
+    { x: scaleX(1935), w: 190, kind: "jump" },
+    { x: scaleX(2100), w: 150, kind: "jump" },
+    { x: scaleX(2535), w: 170, kind: "jump" },
+  );
+}
+
 export const level = clone(baseLevel);
 
 level.id = "level-2";
@@ -263,3 +345,6 @@ level.testActions = level.testActions
     { x: scaleX(1808), w: 96, kind: "jump" },
     { x: scaleX(2032), w: 96, kind: "jump" },
   );
+
+replaceOpeningOrbitDeck();
+level.testActions.sort((a, b) => a.x - b.x);
