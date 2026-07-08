@@ -29,6 +29,9 @@ const localLeaderboardEl = document.querySelector("#localLeaderboard");
 const globalLeaderboardEl = document.querySelector("#globalLeaderboard");
 const skinShopEl = document.querySelector("#skinShop");
 const planeSkinShopEl = document.querySelector("#planeSkinShop");
+const planeSkinPreviewCanvas = document.querySelector("#planeSkinPreview");
+const planeSkinPreviewNameEl = document.querySelector("#planeSkinPreviewName");
+const planeSkinPreviewMetaEl = document.querySelector("#planeSkinPreviewMeta");
 
 const searchParams = new URLSearchParams(window.location.search);
 const level = getLevelById(searchParams.get("level") || searchParams.get("levelId"));
@@ -594,6 +597,14 @@ function renderSkinShop() {
   }
 }
 
+function selectedPlanePreviewMeta(skin) {
+  const owned = economy.ownedPlaneSkins.has(skin.id) || skin.price === 0;
+  if (economy.selectedPlaneSkinId === skin.id) return "\u0412\u044b\u0431\u0440\u0430\u043d";
+  if (PLANE_SKIN_PREVIEW_FREE && !owned) return `\u0421\u0435\u0439\u0447\u0430\u0441 0, \u043f\u043e\u0442\u043e\u043c ${skin.price}`;
+  if (owned) return "\u0415\u0441\u0442\u044c";
+  return `${skin.price} \u043c\u043e\u043d.`;
+}
+
 function renderPlaneSkinShop() {
   if (!planeSkinShopEl) return;
   planeSkinShopEl.replaceChildren();
@@ -648,6 +659,235 @@ function renderPlaneSkinShop() {
     });
     planeSkinShopEl.append(button);
   }
+  updatePlaneSkinPreviewText();
+  drawPlaneSkinPreview();
+}
+
+function updatePlaneSkinPreviewText() {
+  if (!planeSkinPreviewNameEl || !planeSkinPreviewMetaEl) return;
+  const skin = currentPlaneSkin();
+  planeSkinPreviewNameEl.textContent = skin.name;
+  planeSkinPreviewMetaEl.textContent = selectedPlanePreviewMeta(skin);
+}
+
+function drawPlaneSkinPreview() {
+  if (!planeSkinPreviewCanvas || overlay.classList.contains("hidden")) return;
+  const skin = currentPlaneSkin();
+  const ratio = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const cssW = Math.max(240, Math.round(planeSkinPreviewCanvas.clientWidth || 360));
+  const cssH = Math.max(54, Math.round(planeSkinPreviewCanvas.clientHeight || 58));
+  const width = Math.round(cssW * ratio);
+  const height = Math.round(cssH * ratio);
+  if (planeSkinPreviewCanvas.width !== width || planeSkinPreviewCanvas.height !== height) {
+    planeSkinPreviewCanvas.width = width;
+    planeSkinPreviewCanvas.height = height;
+  }
+  const previewCtx = planeSkinPreviewCanvas.getContext("2d");
+  previewCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  previewCtx.clearRect(0, 0, cssW, cssH);
+
+  const time = state.time || 0;
+  const bg = previewCtx.createLinearGradient(0, 0, cssW, cssH);
+  bg.addColorStop(0, "rgba(15, 23, 42, 0.9)");
+  bg.addColorStop(0.45, mixHex(skin.body2, "#0f172a", 0.68));
+  bg.addColorStop(1, "rgba(2, 6, 23, 0.92)");
+  previewCtx.fillStyle = bg;
+  previewCtx.fillRect(0, 0, cssW, cssH);
+
+  previewCtx.save();
+  previewCtx.globalAlpha = 0.32;
+  previewCtx.strokeStyle = mixHex(skin.body2, "#ffffff", 0.22);
+  previewCtx.lineWidth = 2;
+  for (let x = -20 + ((time * 38) % 56); x < cssW + 40; x += 56) {
+    previewCtx.beginPath();
+    previewCtx.moveTo(x, cssH * 0.34);
+    previewCtx.lineTo(x + 30, cssH * 0.34);
+    previewCtx.stroke();
+  }
+  previewCtx.globalAlpha = 0.55;
+  for (let i = 0; i < 5; i += 1) {
+    previewCtx.fillStyle = planePreviewTrailColor(skin, i, time);
+    previewCtx.beginPath();
+    previewCtx.arc(cssW * 0.37 - i * 18 - (time * 34) % 18, cssH * 0.55 + Math.sin(time * 8 + i) * 4, 4.5 - i * 0.35, 0, Math.PI * 2);
+    previewCtx.fill();
+  }
+  previewCtx.restore();
+
+  const scale = Math.max(0.9, Math.min(1.35, cssW / 300, cssH / 58));
+  previewCtx.save();
+  previewCtx.translate(cssW * 0.54, cssH * 0.53 + Math.sin(time * 5) * 1.5);
+  previewCtx.rotate(Math.sin(time * 4.2) * 0.045);
+  previewCtx.scale(scale, scale);
+  drawPreviewPlaneFlame(previewCtx, skin, time);
+  drawPreviewPlaneBody(previewCtx, skin);
+  drawPreviewPlaneCockpit(previewCtx, skin.model);
+  previewCtx.restore();
+}
+
+function planePreviewTrailColor(skin, index, time) {
+  if (skin.flame === "gold") return index % 2 ? "#f97316" : "#fde047";
+  if (skin.flame === "cosmic") return ["#7dd3fc", "#a78bfa", "#f0abfc"][index % 3];
+  if (skin.flame === "rainbow") {
+    const palette = ["#ef4444", "#f97316", "#facc15", "#22c55e", "#38bdf8", "#a855f7"];
+    return palette[(index + Math.floor(time * 5)) % palette.length];
+  }
+  return index % 2 ? "#94a3b8" : "#e2e8f0";
+}
+
+function drawPreviewPlaneFlame(targetCtx, skin, time) {
+  const pulse = 0.82 + Math.sin(time * 18) * 0.18;
+  targetCtx.save();
+  targetCtx.lineCap = "round";
+  targetCtx.lineJoin = "round";
+  if (skin.flame === "gold") {
+    targetCtx.fillStyle = "#f97316";
+    targetCtx.beginPath();
+    targetCtx.moveTo(-22, -9);
+    targetCtx.lineTo(-45 * pulse, 0);
+    targetCtx.lineTo(-22, 9);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.fillStyle = "#fde047";
+    targetCtx.beginPath();
+    targetCtx.moveTo(-22, -5);
+    targetCtx.lineTo(-36 * pulse, 0);
+    targetCtx.lineTo(-22, 5);
+    targetCtx.closePath();
+    targetCtx.fill();
+  } else if (skin.flame === "cosmic") {
+    const palette = ["#7dd3fc", "#a78bfa", "#f0abfc"];
+    for (let i = 0; i < 4; i += 1) {
+      targetCtx.strokeStyle = palette[i % palette.length];
+      targetCtx.lineWidth = 4 - (i % 2);
+      targetCtx.globalAlpha = 0.72;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-22, -9 + i * 6);
+      targetCtx.quadraticCurveTo(-34 - i * 5 * pulse, -15 + i * 10, -45 - i * 2, -8 + i * 5);
+      targetCtx.stroke();
+    }
+    targetCtx.globalAlpha = 1;
+  } else if (skin.flame === "rainbow") {
+    const palette = ["#ef4444", "#f97316", "#facc15", "#22c55e", "#38bdf8", "#a855f7"];
+    for (let i = 0; i < palette.length; i += 1) {
+      targetCtx.strokeStyle = palette[i];
+      targetCtx.lineWidth = 3.2;
+      targetCtx.beginPath();
+      targetCtx.moveTo(-21, -12 + i * 4.8);
+      targetCtx.lineTo(-36 - (i % 2) * 7 * pulse, -17 + i * 5.8);
+      targetCtx.stroke();
+    }
+  } else {
+    targetCtx.strokeStyle = "#cbd5e1";
+    targetCtx.lineWidth = 4;
+    for (let i = -1; i <= 1; i += 1) {
+      targetCtx.beginPath();
+      targetCtx.moveTo(-21, i * 7);
+      targetCtx.lineTo(-36 * pulse, i * 10);
+      targetCtx.stroke();
+    }
+  }
+  targetCtx.restore();
+}
+
+function drawPreviewPlaneBody(targetCtx, skin) {
+  targetCtx.save();
+  targetCtx.lineJoin = "round";
+  targetCtx.strokeStyle = colors.ink;
+  targetCtx.lineWidth = 5;
+  if (skin.model === "cosmic") {
+    const g = targetCtx.createLinearGradient(-18, -18, 28, 18);
+    g.addColorStop(0, skin.body);
+    g.addColorStop(0.62, skin.wing);
+    g.addColorStop(1, skin.body2);
+    targetCtx.fillStyle = g;
+    targetCtx.beginPath();
+    targetCtx.moveTo(28, 0);
+    targetCtx.lineTo(2, -16);
+    targetCtx.lineTo(-19, -13);
+    targetCtx.lineTo(-16, 13);
+    targetCtx.lineTo(3, 16);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.stroke();
+    targetCtx.fillStyle = "#e0f2fe";
+    for (const [x, y, r] of [[-8, -5, 2], [6, 7, 2], [13, -3, 1.8]]) {
+      targetCtx.beginPath();
+      targetCtx.arc(x, y, r, 0, Math.PI * 2);
+      targetCtx.fill();
+    }
+  } else if (skin.model === "rainbow") {
+    const g = targetCtx.createLinearGradient(-22, -16, 28, 18);
+    ["#ef4444", "#facc15", "#22c55e", "#38bdf8", "#a855f7"].forEach((color, index, list) => {
+      g.addColorStop(index / (list.length - 1), color);
+    });
+    targetCtx.fillStyle = g;
+    targetCtx.beginPath();
+    targetCtx.ellipse(0, 0, 28, 15, 0, 0, Math.PI * 2);
+    targetCtx.fill();
+    targetCtx.stroke();
+    targetCtx.fillStyle = "rgba(255, 255, 255, 0.55)";
+    targetCtx.fillRect(-24, -3, 48, 6);
+  } else if (skin.model === "gold") {
+    const g = targetCtx.createLinearGradient(-20, -18, 28, 18);
+    g.addColorStop(0, "#fef3c7");
+    g.addColorStop(0.45, skin.body);
+    g.addColorStop(1, skin.body2);
+    targetCtx.fillStyle = g;
+    targetCtx.beginPath();
+    targetCtx.moveTo(29, 0);
+    targetCtx.lineTo(0, -17);
+    targetCtx.lineTo(-22, -14);
+    targetCtx.lineTo(-11, 0);
+    targetCtx.lineTo(-22, 14);
+    targetCtx.lineTo(0, 17);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.stroke();
+    targetCtx.strokeStyle = "#fff7ad";
+    targetCtx.lineWidth = 3;
+    targetCtx.beginPath();
+    targetCtx.moveTo(-9, -7);
+    targetCtx.lineTo(16, -2);
+    targetCtx.stroke();
+  } else {
+    targetCtx.fillStyle = skin.body;
+    targetCtx.beginPath();
+    targetCtx.roundRect(-22, -12, 32, 24, 4);
+    targetCtx.fill();
+    targetCtx.stroke();
+    targetCtx.fillStyle = skin.body2;
+    targetCtx.beginPath();
+    targetCtx.moveTo(28, 0);
+    targetCtx.lineTo(8, -17);
+    targetCtx.lineTo(8, 17);
+    targetCtx.closePath();
+    targetCtx.fill();
+    targetCtx.stroke();
+    targetCtx.fillStyle = skin.wing;
+    targetCtx.fillRect(-10, -18, 16, 9);
+    targetCtx.fillRect(-10, 9, 16, 9);
+  }
+  targetCtx.restore();
+}
+
+function drawPreviewPlaneCockpit(targetCtx, model) {
+  const domeY = model === "rainbow" ? -7 : -11;
+  targetCtx.save();
+  targetCtx.strokeStyle = colors.ink;
+  targetCtx.lineWidth = 4;
+  targetCtx.fillStyle = "rgba(226, 232, 240, 0.94)";
+  targetCtx.beginPath();
+  targetCtx.arc(-1, domeY, 10, Math.PI, 0);
+  targetCtx.lineTo(9, domeY + 8);
+  targetCtx.lineTo(-11, domeY + 8);
+  targetCtx.closePath();
+  targetCtx.fill();
+  targetCtx.stroke();
+  targetCtx.fillStyle = "#111827";
+  targetCtx.fillRect(-5, domeY - 4, 9, 4);
+  targetCtx.fillStyle = "#f8fafc";
+  targetCtx.fillRect(-2, domeY + 2, 4, 7);
+  targetCtx.restore();
 }
 
 function getLocalRecords() {
@@ -1903,6 +2143,7 @@ function draw() {
   drawPlayer();
   drawPortalFlash();
   ctx.restore();
+  drawPlaneSkinPreview();
 }
 
 function drawBackground() {
