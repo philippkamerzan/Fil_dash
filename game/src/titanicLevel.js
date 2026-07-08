@@ -235,7 +235,7 @@ const sectionLayout = [
   { id: "bulkhead-steps", name: "Bulkhead Steps", x: 1540, lane: 1210, accent: "#fb7185" },
   { id: "searchlight-hold", name: "Searchlight Hold", x: 2920, lane: 890, accent: "#facc15" },
   { id: "water-drop", name: "Water Drop", x: 4380, lane: 1148, accent: "#60a5fa" },
-  { id: "boiler-flight", name: "Boiler Flight", x: 5060, lane: 1010, accent: "#f97316", extra: { spawnMode: "plane" } },
+  { id: "boiler-flight", name: "Mini Bathyscaphe", x: 5060, lane: 1010, accent: "#f97316", extra: { spawnMode: "plane", planeStage: true } },
   { id: "deck-return", name: "Deck Return", x: 6760, lane: 1110, accent: "#22d3ee" },
   { id: "tilt-steps", name: "Tilt Steps", x: 7840, lane: 1200, accent: "#f59e0b" },
   { id: "pipe-ceiling", name: "Pipe Ceiling", x: 9000, lane: 650, accent: "#a78bfa" },

@@ -54,7 +54,7 @@ export const sections = [
   { id: "trap", name: "Ловушка", x: 2150, w: 900, accent: "#ff4d6d", lane: 1120 },
   { id: "yellow", name: "Желтый пролет", x: 3050, w: 1550, accent: "#ffd84d", lane: 920 },
   { id: "down", name: "Портал вниз", x: 4600, w: 500, accent: "#ff9e23", lane: 980 },
-  { id: "plane", name: "Самолетик", x: 5100, w: 1700, accent: "#20c5d6", lane: 1080 },
+  { id: "plane", name: "Самолетик", x: 5100, w: 1700, accent: "#20c5d6", lane: 1080, spawnMode: "plane", planeStage: true },
   { id: "cube-return", name: "Возврат", x: 6800, w: 1200, accent: "#34d399", lane: 930 },
   { id: "flip", name: "Переворот", x: 8000, w: 450, accent: "#ff9e23", lane: 930 },
   { id: "inverted", name: "Вверх ногами", x: 8450, w: 1550, accent: "#8b5cf6", lane: 500 },

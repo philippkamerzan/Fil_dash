@@ -203,7 +203,7 @@ const sectionLayout = [
   { id: "meteor-steps", name: "Meteor steps", x: 1540, lane: 1048, accent: "#fb7185" },
   { id: "solar-drift", name: "Solar drift", x: 2920, lane: 860, accent: "#facc15" },
   { id: "airlock-drop", name: "Airlock drop", x: 4440, lane: 1060, accent: "#fb923c" },
-  { id: "ship-flight", name: "Ship flight", x: 5060, lane: 1010, accent: "#22d3ee", extra: { spawnMode: "plane" } },
+  { id: "ship-flight", name: "Space Jet", x: 5060, lane: 1010, accent: "#22d3ee", extra: { spawnMode: "plane", planeStage: true } },
   { id: "orbit-return", name: "Orbit return", x: 6800, lane: 1040, accent: "#34d399" },
   { id: "gravity-well", name: "Gravity well", x: 7750, lane: 910, accent: "#f97316" },
   { id: "ceiling-orbit", name: "Ceiling orbit", x: 8420, lane: 520, accent: "#a78bfa" },

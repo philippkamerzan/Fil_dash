@@ -20,6 +20,7 @@ const checks = [
   scriptedVariantsCheck(),
   mobileAttemptsCheck(),
   geometryUniquenessCheck(),
+  planeModeStageAudit(),
   densityAudit(),
   hitboxAudit(),
   mobileSafeZoneAudit(),
@@ -70,6 +71,52 @@ function geometryUniquenessCheck() {
     ok: report.ok,
     metadata: report.metadata,
     results: report.results,
+  };
+}
+
+function planeModeStageAudit() {
+  const results = levels.map((level) => {
+    const planeSections = (level.sections || []).filter((section) =>
+      section.spawnMode === "plane" || section.planeStage === true
+    );
+    const portalDowns = (level.boosters || []).filter((booster) =>
+      booster.type === "portalDown" && booster.target?.mode === "plane"
+    );
+    const planeOuts = (level.portals || []).filter((portal) =>
+      portal.type === "planeOut" && portal.target?.mode === "cube"
+    );
+    const coveredSections = planeSections.filter((section) =>
+      portalDowns.some((booster) => booster.target.x >= section.x && booster.target.x <= section.x + section.w)
+      && planeOuts.some((portal) => portal.x >= section.x && portal.x <= section.x + section.w + 220)
+    );
+    return {
+      level: level.number,
+      ok: planeSections.length > 0
+        && portalDowns.length > 0
+        && planeOuts.length > 0
+        && coveredSections.length === planeSections.length,
+      planeSections: planeSections.map((section) => ({
+        id: section.id,
+        name: section.name,
+        x: Math.round(section.x),
+        w: Math.round(section.w),
+      })),
+      portalDowns: portalDowns.map((booster) => ({
+        x: Math.round(booster.x),
+        targetMode: booster.target.mode,
+        targetX: Math.round(booster.target.x),
+      })),
+      planeOuts: planeOuts.map((portal) => ({
+        x: Math.round(portal.x),
+        targetMode: portal.target.mode,
+        targetX: Math.round(portal.target.x),
+      })),
+    };
+  });
+  return {
+    name: "plane-mode stages",
+    ok: results.every((result) => result.ok),
+    results,
   };
 }
 

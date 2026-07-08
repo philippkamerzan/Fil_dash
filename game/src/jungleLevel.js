@@ -271,7 +271,7 @@ const sectionLayout = [
   { id: "thorn-steps", name: "Thorn Steps", x: 1320, lane: 1118, accent: "#f97316" },
   { id: "vine-hold", name: "Vine Hold", x: 2360, lane: 870, accent: "#facc15" },
   { id: "root-drop", name: "Root Drop", x: 4380, lane: 1130, accent: "#fb923c" },
-  { id: "swamp-glider", name: "Swamp Glider", x: 5060, lane: 1040, accent: "#06b6d4", extra: { spawnMode: "plane" } },
+  { id: "swamp-glider", name: "Canopy Jet", x: 5060, lane: 1040, accent: "#06b6d4", extra: { spawnMode: "plane", planeStage: true } },
   { id: "temple-rise", name: "Temple Rise", x: 6740, lane: 1090, accent: "#34d399" },
   { id: "hollow-steps", name: "Hollow Steps", x: 7800, lane: 1180, accent: "#f97316" },
   { id: "canopy-ceiling", name: "Canopy Ceiling", x: 8820, lane: 650, accent: "#a855f7" },
