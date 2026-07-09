@@ -16,11 +16,17 @@ services:
     build:
       context: .
     image: fil-dash:local
-    command: ["node", "telegram/bot.mjs"]
+    command: ["node", "telegram/supervisor.mjs"]
     profiles: ["telegram"]
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       PUBLIC_GAME_URL: ${PUBLIC_GAME_URL:-}
+      GAME_ORIGIN: http://game:5178
+      START_LEVEL: 1
+      CHECK_SECONDS: 30
+      CLOUDFLARED_PROTOCOL: http2
+      TUNNEL_STABLE_CHECKS: 2
+      TUNNEL_STABLE_GAP_SECONDS: 8
     depends_on:
       - game
     restart: unless-stopped
