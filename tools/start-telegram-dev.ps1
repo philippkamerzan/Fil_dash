@@ -38,6 +38,17 @@ function Wait-HttpOk([string]$url, [int]$timeoutSeconds = 30) {
   throw "URL did not become ready: $url"
 }
 
+function Wait-HttpStable([string]$url, [int]$checks = 2, [int]$gapSeconds = 6, [int]$timeoutSeconds = 30) {
+  $response = $null
+  for ($i = 0; $i -lt $checks; $i++) {
+    $response = Wait-HttpOk $url $timeoutSeconds
+    if ($i -lt ($checks - 1)) {
+      Start-Sleep -Seconds $gapSeconds
+    }
+  }
+  return $response
+}
+
 function Stop-OtherTunnels([int]$port, [int[]]$keepPids = @()) {
   Get-CimInstance Win32_Process |
     Where-Object {
@@ -124,6 +135,20 @@ function Set-TelegramMenu([string]$token, [string]$publicGameUrl) {
   }
 }
 
+function Get-TelegramMenuUrl([string]$token) {
+  try {
+    $result = Invoke-RestMethod `
+      -Method Post `
+      -ContentType "application/json; charset=utf-8" `
+      -Body "{}" `
+      -Uri "https://api.telegram.org/bot$token/getChatMenuButton" `
+      -TimeoutSec 20
+    return $result.result.web_app.url
+  } catch {
+    return $null
+  }
+}
+
 function Start-TelegramStack {
   $token = Get-RequiredEnv "TELEGRAM_BOT_TOKEN"
 
@@ -140,7 +165,7 @@ function Start-TelegramStack {
       $cacheBust = [int][double]::Parse((Get-Date -UFormat %s))
       $publicGameUrl = "$($tunnel.Url)/?level=$Level&r=auto-$cacheBust"
       try {
-        Wait-HttpOk $publicGameUrl 75 | Out-Null
+        Wait-HttpStable $publicGameUrl 2 8 75 | Out-Null
         break
       } catch {
         $lastTunnelError = $_.Exception.Message
@@ -178,9 +203,30 @@ function Start-TelegramStack {
   }
 }
 
-$current = Start-TelegramStack
-Write-Host "Telegram game URL: $($current.PublicGameUrl)"
-Write-Host "cloudflared PID: $($current.TunnelPid)"
+$current = $null
+$token = Get-RequiredEnv "TELEGRAM_BOT_TOKEN"
+if ($Watch -and $RefreshMinutes -eq 0) {
+  $existingUrl = Get-TelegramMenuUrl $token
+  if ($existingUrl) {
+    try {
+      Wait-HttpStable $existingUrl 2 6 15 | Out-Null
+      $current = [pscustomobject]@{
+        PublicGameUrl = $existingUrl
+        TunnelPid = $null
+        TunnelLog = $null
+      }
+      Write-Host "Using existing healthy Telegram game URL: $($current.PublicGameUrl)"
+    } catch {
+      Write-Warning "Existing Telegram URL is not healthy, refreshing: $($_.Exception.Message)"
+    }
+  }
+}
+
+if (-not $current) {
+  $current = Start-TelegramStack
+  Write-Host "Telegram game URL: $($current.PublicGameUrl)"
+  Write-Host "cloudflared PID: $($current.TunnelPid)"
+}
 
 if ($Watch) {
   Write-Host "Watch mode enabled. Checking every $CheckSeconds seconds."
