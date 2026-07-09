@@ -45,6 +45,70 @@ body {
   background: #f7f1e6;
 }
 
+.boot-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: var(--text);
+  background:
+    linear-gradient(rgba(16, 19, 31, 0.78), rgba(16, 19, 31, 0.62)),
+    repeating-linear-gradient(135deg, rgba(34, 199, 215, 0.16) 0 12px, transparent 12px 28px),
+    #10131f;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 220ms ease, visibility 220ms ease;
+  pointer-events: auto;
+}
+
+body.game-ready .boot-loading {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.boot-loading-mark {
+  width: min(74px, 15vw);
+  aspect-ratio: 1;
+  border: 6px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--sun);
+  border-right-color: var(--accent);
+  border-radius: 50%;
+  animation: bootSpin 850ms linear infinite;
+}
+
+.boot-loading-title {
+  font-size: clamp(34px, 9vw, 78px);
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.22), 0 18px 42px rgba(0, 0, 0, 0.35);
+}
+
+.boot-loading-text {
+  min-width: 168px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(16, 19, 31, 0.72);
+  padding: 0 18px;
+  color: #dffbff;
+  font-size: clamp(15px, 4vw, 20px);
+  font-weight: 900;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+@keyframes bootSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .space3d-layer {
   position: absolute;
   inset: 0;

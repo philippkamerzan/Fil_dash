@@ -1,0 +1,40 @@
+services:
+  game:
+    build:
+      context: .
+    image: fil-dash:local
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5178
+    ports:
+      - "5178:5178"
+    volumes:
+      - fil_dash_data:/app/game/data
+    restart: unless-stopped
+
+  telegram-bot:
+    build:
+      context: .
+    image: fil-dash:local
+    command: ["node", "telegram/bot.mjs"]
+    profiles: ["telegram"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      PUBLIC_GAME_URL: ${PUBLIC_GAME_URL:-}
+    depends_on:
+      - game
+    restart: unless-stopped
+
+  telegram-publish:
+    build:
+      context: .
+    image: fil-dash:local
+    command: ["node", "telegram/publish.mjs"]
+    profiles: ["publish"]
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      PUBLIC_GAME_URL: ${PUBLIC_GAME_URL:-}
+    restart: "no"
+
+volumes:
+  fil_dash_data:

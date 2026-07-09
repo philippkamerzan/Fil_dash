@@ -10,6 +10,7 @@ credentials.*
 node_modules/
 dist/
 *.log
+game/data/
 tools/cloudflared.exe
 output/*/
 output/lo_profile*/

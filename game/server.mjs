@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,6 +9,7 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 const dataDir = join(root, "data");
 const dataFile = join(dataDir, "leaderboard.json");
 const port = Number(process.env.PORT || 5178);
+const host = process.env.HOST || "127.0.0.1";
 const maxRecordsPerLevel = 100;
 const defaultLevelId = "level-1";
 
@@ -161,15 +163,45 @@ createServer(async (req, res) => {
   }
 
   const type = contentTypes[extname(path)] || "application/octet-stream";
+  const range = req.headers.range;
+  if (range) {
+    try {
+      const fileStat = await stat(path);
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      if (!match) throw new Error("bad range");
+      const start = match[1] ? Number(match[1]) : 0;
+      const end = match[2] ? Number(match[2]) : fileStat.size - 1;
+      if (!Number.isFinite(start) || !Number.isFinite(end) || start > end || end >= fileStat.size) {
+        res.writeHead(416, { "content-range": `bytes */${fileStat.size}` });
+        res.end();
+        return;
+      }
+      res.writeHead(206, {
+        "content-type": type,
+        "accept-ranges": "bytes",
+        "content-range": `bytes ${start}-${end}/${fileStat.size}`,
+        "content-length": end - start + 1,
+      });
+      createReadStream(path, { start, end }).pipe(res);
+      return;
+    } catch {
+      res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
+      res.end("Not found");
+      return;
+    }
+  }
   const stream = createReadStream(path);
   stream.on("open", () => {
-    res.writeHead(200, { "content-type": type });
+    res.writeHead(200, {
+      "content-type": type,
+      "accept-ranges": "bytes",
+    });
     stream.pipe(res);
   });
   stream.on("error", () => {
     res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
     res.end("Not found");
   });
-}).listen(port, "127.0.0.1", () => {
-  console.log(`FIL Dash with leaderboard: http://127.0.0.1:${port}/`);
+}).listen(port, host, () => {
+  console.log(`FIL Dash with leaderboard: http://${host}:${port}/`);
 });

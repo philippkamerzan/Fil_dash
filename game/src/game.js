@@ -32,6 +32,7 @@ const planeSkinShopEl = document.querySelector("#planeSkinShop");
 const planeSkinPreviewCanvas = document.querySelector("#planeSkinPreview");
 const planeSkinPreviewNameEl = document.querySelector("#planeSkinPreviewName");
 const planeSkinPreviewMetaEl = document.querySelector("#planeSkinPreviewMeta");
+const bootLoadingEl = document.querySelector("#bootLoading");
 
 const searchParams = new URLSearchParams(window.location.search);
 const level = getLevelById(searchParams.get("level") || searchParams.get("levelId"));
@@ -1343,6 +1344,12 @@ function startGame() {
   playTone(420, 0.08, "triangle", 0.05);
 }
 
+function hideBootLoading() {
+  if (!bootLoadingEl) return;
+  document.body.classList.add("game-ready");
+  bootLoadingEl.setAttribute("aria-hidden", "true");
+}
+
 function openLevelMenu() {
   if (TEST_RUN) return;
   if (state.running && !state.finished) setPaused(true);
@@ -1471,7 +1478,7 @@ function ensureLevelMusic() {
   if (!level.music?.src) return null;
   if (levelMusic) return levelMusic;
   levelMusic = new Audio(level.music.src);
-  levelMusic.preload = "auto";
+  levelMusic.preload = "none";
   levelMusic.loop = level.music.loop ?? true;
   levelMusic.volume = levelMusicVolume();
   levelMusic.addEventListener("error", () => {
@@ -4836,4 +4843,7 @@ if (TEST_RUN) {
   state.running = true;
   overlay.classList.add("hidden");
 }
-requestAnimationFrame(loop);
+requestAnimationFrame((now) => {
+  hideBootLoading();
+  loop(now);
+});
