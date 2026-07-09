@@ -129,7 +129,7 @@ function Start-TelegramStack {
 
   Push-Location $repoRoot
   try {
-    docker compose up -d game | Out-Null
+    docker compose up -d --build game | Out-Null
     Wait-HttpOk "http://127.0.0.1:$Port/?health=telegram-dev" 45 | Out-Null
 
     $tunnel = $null
@@ -166,7 +166,7 @@ function Start-TelegramStack {
     [Environment]::SetEnvironmentVariable("PUBLIC_GAME_URL", $publicGameUrl, "User")
     $env:TELEGRAM_BOT_TOKEN = $token
     $env:PUBLIC_GAME_URL = $publicGameUrl
-    docker compose --profile telegram up -d --force-recreate telegram-bot | Out-Null
+    docker compose --profile telegram up -d --build --force-recreate telegram-bot | Out-Null
 
     return [pscustomobject]@{
       PublicGameUrl = $publicGameUrl

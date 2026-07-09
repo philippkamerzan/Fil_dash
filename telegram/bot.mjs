@@ -1,6 +1,13 @@
 const token = process.env.TELEGRAM_BOT_TOKEN || process.env.BOT_TOKEN;
 const publicGameUrl = process.env.PUBLIC_GAME_URL || process.env.GAME_URL;
 
+const TEXT = {
+  play: "\u0418\u0433\u0440\u0430\u0442\u044c",
+  ready: "FIL Dash \u0433\u043e\u0442\u043e\u0432.",
+  missingUrl:
+    "FIL Dash \u0433\u043e\u0442\u043e\u0432. \u0414\u043b\u044f \u043a\u043d\u043e\u043f\u043a\u0438 Web App \u0437\u0430\u0434\u0430\u0439\u0442\u0435 PUBLIC_GAME_URL.",
+};
+
 if (!token) {
   console.error("TELEGRAM_BOT_TOKEN is required.");
   process.exit(1);
@@ -43,7 +50,7 @@ function buildReplyMarkup() {
     inline_keyboard: [
       [
         {
-          text: "Играть",
+          text: TEXT.play,
           web_app: { url: publicGameUrl },
         },
       ],
@@ -55,7 +62,7 @@ async function sendPlayMessage(chatId) {
   const reply_markup = buildReplyMarkup();
   await api("sendMessage", {
     chat_id: chatId,
-    text: reply_markup ? "FIL Dash готов." : "FIL Dash готов. Для кнопки Web App задайте PUBLIC_GAME_URL.",
+    text: reply_markup ? TEXT.ready : TEXT.missingUrl,
     reply_markup,
   });
 }
